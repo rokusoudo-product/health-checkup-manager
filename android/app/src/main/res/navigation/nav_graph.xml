@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/mainFragment">
+
+    <!-- ホーム画面（仮置き） -->
+    <fragment
+        android:id="@+id/mainFragment"
+        android:name="com.rokusodo.healthcheckup.MainFragment"
+        android:label="@string/title_home"
+        tools:layout="@layout/fragment_main">
+
+        <action
+            android:id="@+id/action_main_to_camera"
+            app:destination="@id/cameraFragment" />
+    </fragment>
+
+    <!-- 撮影画面 -->
+    <fragment
+        android:id="@+id/cameraFragment"
+        android:name="com.rokusodo.healthcheckup.CameraFragment"
+        android:label="撮影"
+        tools:layout="@layout/fragment_camera">
+
+        <action
+            android:id="@+id/action_camera_to_ocr_result"
+            app:destination="@id/ocrResultFragment" />
+    </fragment>
+
+    <!-- OCR確認・補正画面 -->
+    <fragment
+        android:id="@+id/ocrResultFragment"
+        android:name="com.rokusodo.healthcheckup.OcrResultFragment"
+        android:label="@string/title_ocr_result"
+        tools:layout="@layout/fragment_ocr_result">
+
+        <!-- OCRテキスト（エラープレフィクスを含む場合あり）をCameraFragmentから受け取る -->
+        <argument
+            android:name="ocrText"
+            app:argType="string"
+            android:defaultValue="" />
+    </fragment>
+
+</navigation>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">健康診断マネージャー</string>
+
+    <!-- Camera screen -->
+    <string name="btn_capture">撮影</string>
+    <string name="btn_start_ocr">OCR開始 (%d枚)</string>
+    <string name="label_captured_count">撮影済み: %d枚</string>
+
+    <!-- OCR result screen -->
+    <string name="title_ocr_result">OCR結果確認</string>
+    <string name="hint_item_name">項目名</string>
+    <string name="hint_value">値</string>
+    <string name="hint_unit">単位</string>
+    <string name="btn_save">保存</string>
+
+    <!-- OCR error messages (薬事法対応: 医療アドバイスなし) -->
+    <string name="error_insufficient_text">読み取りに失敗しました。手動で入力してください</string>
+    <string name="error_low_confidence">もう少し近づけて撮影してください</string>
+    <string name="error_ocr_failed">OCR処理中にエラーが発生しました</string>
+
+    <!-- Home screen -->
+    <string name="title_home">診断記録</string>
+    <string name="btn_add_new">新規追加</string>
+</resources>

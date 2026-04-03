@@ -1,0 +1,86 @@
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.navigation.safeargs)
+    // Firebase: コメントアウト (google-services.json 未設置のため)
+    // alias(libs.plugins.google.services)
+}
+
+android {
+    namespace = "com.rokusodo.healthcheckup"
+    compileSdk = 35
+
+    defaultConfig {
+        applicationId = "com.rokusodo.healthcheckup"
+        minSdk = 26
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0.0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    buildFeatures {
+        viewBinding = true
+    }
+}
+
+dependencies {
+    // AndroidX Core
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.activity.ktx)
+    implementation(libs.androidx.fragment.ktx)
+
+    // CameraX
+    implementation(libs.camerax.camera2)
+    implementation(libs.camerax.lifecycle)
+    implementation(libs.camerax.view)
+
+    // ML Kit Text Recognition (Japanese)
+    implementation(libs.mlkit.text.recognition.japanese)
+
+    // Room
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    kapt(libs.room.compiler)
+
+    // Navigation Component
+    implementation(libs.navigation.fragment.ktx)
+    implementation(libs.navigation.ui.ktx)
+
+    // MPAndroidChart
+    implementation(libs.mpandroidchart)
+
+    // Firebase (BOM + Auth)
+    // Firebase Auth は google-services.json が必要なため、実際のビルド時に有効化する
+    // implementation(platform(libs.firebase.bom))
+    // implementation(libs.firebase.auth.ktx)
+
+    // Coroutines
+    implementation(libs.kotlinx.coroutines.android)
+    // Coroutines support for Google Play Services / ML Kit Tasks
+    implementation(libs.kotlinx.coroutines.play.services)
+}
