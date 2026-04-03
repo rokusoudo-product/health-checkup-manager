@@ -3,8 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.navigation.safeargs)
-    // Firebase: コメントアウト (google-services.json 未設置のため)
-    // alias(libs.plugins.google.services)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -75,9 +74,8 @@ dependencies {
     implementation(libs.mpandroidchart)
 
     // Firebase (BOM + Auth)
-    // Firebase Auth は google-services.json が必要なため、実際のビルド時に有効化する
-    // implementation(platform(libs.firebase.bom))
-    // implementation(libs.firebase.auth.ktx)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth.ktx)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
