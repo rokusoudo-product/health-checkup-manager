@@ -9,6 +9,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.rokusodo.healthcheckup.HealthCheckupApp
@@ -18,6 +19,7 @@ import kotlinx.coroutines.launch
 /**
  * 診断記録詳細画面。
  * 検査項目一覧を表示し、基準値外の項目は赤くハイライトする。
+ * 各項目行の「グラフ」ボタンで経年グラフ画面へ遷移できる。
  * 薬事法対応: 診断・アドバイス・医療判断のテキストを一切含まない。
  */
 class RecordDetailFragment : Fragment() {
@@ -51,7 +53,10 @@ class RecordDetailFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        recordItemAdapter = RecordItemAdapter()
+        recordItemAdapter = RecordItemAdapter { itemName ->
+            val action = RecordDetailFragmentDirections.actionRecordDetailToTrendGraph(itemName)
+            findNavController().navigate(action)
+        }
         binding.recyclerExaminationItems.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = recordItemAdapter

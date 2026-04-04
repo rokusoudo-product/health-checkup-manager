@@ -83,6 +83,10 @@ class MainFragment : Fragment() {
                         findNavController().navigate(R.id.action_main_to_item_master)
                         true
                     }
+                    R.id.action_abnormal_list -> {
+                        findNavController().navigate(R.id.action_main_to_abnormal_list)
+                        true
+                    }
                     else -> false
                 }
             }

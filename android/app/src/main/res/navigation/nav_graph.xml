@@ -23,6 +23,10 @@
         <action
             android:id="@+id/action_main_to_item_master"
             app:destination="@id/itemMasterFragment" />
+
+        <action
+            android:id="@+id/action_main_to_abnormal_list"
+            app:destination="@id/abnormalListFragment" />
     </fragment>
 
     <!-- 撮影画面 -->
@@ -61,6 +65,10 @@
         <argument
             android:name="recordId"
             app:argType="long" />
+
+        <action
+            android:id="@+id/action_record_detail_to_trend_graph"
+            app:destination="@id/trendGraphFragment" />
     </fragment>
 
     <!-- 項目マスター管理画面 -->
@@ -69,5 +77,21 @@
         android:name="com.rokusodo.healthcheckup.ui.master.ItemMasterFragment"
         android:label="@string/title_item_master"
         tools:layout="@layout/fragment_item_master" />
+
+    <!-- 経年グラフ画面 -->
+    <fragment
+        android:id="@+id/trendGraphFragment"
+        android:name="com.rokusodo.healthcheckup.ui.graph.TrendGraphFragment"
+        android:label="@string/title_trend_graph"
+        tools:layout="@layout/fragment_trend_graph">
+        <argument android:name="itemName" app:argType="string" />
+    </fragment>
+
+    <!-- 基準値外一覧画面 -->
+    <fragment
+        android:id="@+id/abnormalListFragment"
+        android:name="com.rokusodo.healthcheckup.ui.notification.AbnormalListFragment"
+        android:label="@string/title_abnormal_list"
+        tools:layout="@layout/fragment_abnormal_list" />
 
 </navigation>

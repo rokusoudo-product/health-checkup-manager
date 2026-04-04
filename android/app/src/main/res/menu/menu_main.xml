@@ -8,4 +8,10 @@
         android:icon="@android:drawable/ic_menu_edit"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/action_abnormal_list"
+        android:title="@string/menu_abnormal_list"
+        android:icon="@android:drawable/ic_dialog_alert"
+        app:showAsAction="never" />
+
 </menu>

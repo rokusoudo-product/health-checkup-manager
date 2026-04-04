@@ -13,7 +13,9 @@ import com.rokusodo.healthcheckup.databinding.ItemExaminationItemBinding
  * 検査項目一覧の RecyclerView アダプター。
  * 薬事法対応: isAbnormal はハイライト表示のみに使用し、医療判断を含まない。
  */
-class RecordItemAdapter : ListAdapter<ExaminationItem, RecordItemAdapter.ViewHolder>(DiffCallback()) {
+class RecordItemAdapter(
+    private val onGraphClick: (itemName: String) -> Unit = {}
+) : ListAdapter<ExaminationItem, RecordItemAdapter.ViewHolder>(DiffCallback()) {
 
     inner class ViewHolder(private val binding: ItemExaminationItemBinding) :
         RecyclerView.ViewHolder(binding.root) {
@@ -46,6 +48,11 @@ class RecordItemAdapter : ListAdapter<ExaminationItem, RecordItemAdapter.ViewHol
                 typedArray.recycle()
                 binding.tvItemName.setTextColor(defaultColor)
                 binding.tvItemValue.setTextColor(defaultColor)
+            }
+
+            // グラフボタン
+            binding.btnGraph.setOnClickListener {
+                onGraphClick(item.itemName)
             }
         }
     }

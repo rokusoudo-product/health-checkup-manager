@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <!-- Internet permission for Firebase Auth -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Notification permission for abnormal alert (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <uses-feature
         android:name="android.hardware.camera"

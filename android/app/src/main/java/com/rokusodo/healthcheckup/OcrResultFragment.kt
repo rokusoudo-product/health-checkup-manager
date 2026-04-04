@@ -1,11 +1,14 @@
 package com.rokusodo.healthcheckup
 
+import android.Manifest
 import android.app.DatePickerDialog
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -34,8 +37,14 @@ class OcrResultFragment : Fragment() {
 
     private val viewModel: OcrResultViewModel by viewModels {
         val app = requireActivity().application as HealthCheckupApp
-        OcrResultViewModel.Factory(app.repository)
+        OcrResultViewModel.Factory(app, app.repository)
     }
+
+    // Android 13+ 通知パーミッションリクエスト
+    private val requestNotificationPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+            // パーミッション結果は無視（通知は任意機能のため）
+        }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -48,6 +57,11 @@ class OcrResultFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Android 13 以上の場合、通知パーミッションをリクエスト
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
 
         val rawPayload = args.ocrText
         val (ocrText, errorType) = parsePayload(rawPayload)

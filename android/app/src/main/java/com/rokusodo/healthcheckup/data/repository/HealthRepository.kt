@@ -2,6 +2,7 @@ package com.rokusodo.healthcheckup.data.repository
 
 import com.rokusodo.healthcheckup.OcrItem
 import com.rokusodo.healthcheckup.data.db.HealthCheckupDatabase
+import com.rokusodo.healthcheckup.data.db.dao.ItemTrend
 import com.rokusodo.healthcheckup.data.db.entity.ExaminationItem
 import com.rokusodo.healthcheckup.data.db.entity.ExaminationRecord
 import com.rokusodo.healthcheckup.data.db.entity.ItemMaster
@@ -59,4 +60,22 @@ class HealthRepository(private val db: HealthCheckupDatabase) {
     fun getAllMasters(): Flow<List<ItemMaster>> = db.masterDao().getAll()
 
     suspend fun upsertMaster(master: ItemMaster) = db.masterDao().upsert(master)
+
+    /**
+     * 指定した recordId の検査項目を一度だけ取得する（通知判定用）。
+     */
+    suspend fun getItemsForRecordSnapshot(recordId: Long): List<ExaminationItem> =
+        db.itemDao().getByRecordIdOnce(recordId)
+
+    /**
+     * 指定した項目名の経年データを日付昇順で取得する（グラフ表示用）。
+     */
+    suspend fun getItemTrend(itemName: String): List<ItemTrend> =
+        db.itemDao().getItemTrendByName(itemName)
+
+    /**
+     * 基準値外の全検査項目を新しい順で取得する（Flow）。
+     */
+    fun getAllAbnormalItems(): Flow<List<ExaminationItem>> =
+        db.itemDao().getAllAbnormalItems()
 }

@@ -17,4 +17,30 @@ interface ExaminationItemDao {
 
     @Query("SELECT * FROM examination_items WHERE recordId = :recordId ORDER BY id ASC")
     fun getByRecordId(recordId: Long): Flow<List<ExaminationItem>>
+
+    /**
+     * 特定の項目名を持つ検査項目を日付昇順で取得（グラフ用）
+     */
+    @Query("""
+        SELECT ei.id, ei.recordId, ei.itemName, ei.value, ei.unit,
+               ei.referenceMin, ei.referenceMax, ei.isAbnormal,
+               er.date as recordDate
+        FROM examination_items ei
+        INNER JOIN examination_records er ON ei.recordId = er.id
+        WHERE ei.itemName = :itemName
+        ORDER BY er.date ASC
+    """)
+    suspend fun getItemTrendByName(itemName: String): List<ItemTrend>
+
+    /**
+     * isAbnormal = true の全検査項目を新しい順で取得
+     */
+    @Query("SELECT * FROM examination_items WHERE isAbnormal = 1 ORDER BY id DESC")
+    fun getAllAbnormalItems(): Flow<List<ExaminationItem>>
+
+    /**
+     * 指定した recordId の検査項目を一度だけ取得（通知判定用）
+     */
+    @Query("SELECT * FROM examination_items WHERE recordId = :recordId ORDER BY id ASC")
+    suspend fun getByRecordIdOnce(recordId: Long): List<ExaminationItem>
 }
