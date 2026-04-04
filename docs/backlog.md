@@ -49,9 +49,10 @@
 |---------|--------|------|-----------|
 | T-001 | 技術選定・アーキテクチャ設計ドキュメント作成 | po_agent | ✅ 完了 |
 | T-002 | ユーザーストーリー・バックログ作成 | po_agent | ✅ 完了 |
-| T-003 | Androidプロジェクト初期構成（依存関係定義） | engineer | 未着手 |
-| T-004 | CameraX基本実装（撮影フロー） | engineer | 未着手 |
-| T-005 | ML Kit Text Recognition 動作確認 | engineer | 未着手 |
+| T-003 | Androidプロジェクト初期構成（依存関係定義） | engineer | ✅ 完了 |
+| T-004 | CameraX基本実装（撮影フロー） | engineer | ✅ 完了 |
+| T-005 | ML Kit Text Recognition 動作確認 | engineer | ✅ 完了 |
+| T-006 | GitHubリポジトリ作成・初回push | zakis | ✅ 完了 |
 
 ### Sprint 2（4/9〜）: MVP コア機能
 

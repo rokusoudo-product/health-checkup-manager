@@ -13,13 +13,34 @@
     <string name="hint_value">値</string>
     <string name="hint_unit">単位</string>
     <string name="btn_save">保存</string>
+    <string name="btn_cancel">キャンセル</string>
+    <string name="dialog_title_facility">医療機関名（任意）</string>
+    <string name="hint_facility">例: ○○クリニック</string>
+    <string name="msg_save_success">保存しました</string>
+    <string name="msg_save_error">保存に失敗しました: %s</string>
 
     <!-- OCR error messages (薬事法対応: 医療アドバイスなし) -->
     <string name="error_insufficient_text">読み取りに失敗しました。手動で入力してください</string>
     <string name="error_low_confidence">もう少し近づけて撮影してください</string>
     <string name="error_ocr_failed">OCR処理中にエラーが発生しました</string>
 
-    <!-- Home screen -->
+    <!-- Home screen (record list) -->
     <string name="title_home">診断記録</string>
     <string name="btn_add_new">新規追加</string>
+    <string name="msg_no_records">まだ記録がありません</string>
+    <string name="menu_item_master">基準値マスター</string>
+
+    <!-- Record detail screen -->
+    <string name="title_record_detail">検査結果詳細</string>
+
+    <!-- Item master screen -->
+    <string name="title_item_master">基準値マスター</string>
+    <string name="btn_add_master">マスター追加</string>
+    <string name="btn_edit">編集</string>
+    <string name="dialog_title_add_master">項目マスター追加</string>
+    <string name="dialog_title_edit_master">項目マスター編集</string>
+    <string name="hint_ref_min">基準値（下限）</string>
+    <string name="hint_ref_max">基準値（上限）</string>
+    <string name="label_ref_min">下限</string>
+    <string name="label_ref_max">上限</string>
 </resources>

@@ -47,6 +47,17 @@
         app:layout_constraintEnd_toEndOf="parent"
         tools:listitem="@layout/item_ocr_result" />
 
+    <!-- Progress indicator (shown during save) -->
+    <ProgressBar
+        android:id="@+id/progress_save"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/btn_save"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="8dp" />
+
     <!-- Save button -->
     <Button
         android:id="@+id/btn_save"

@@ -1,14 +1,24 @@
 package com.rokusodo.healthcheckup
 
+import android.app.DatePickerDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.rokusodo.healthcheckup.databinding.FragmentOcrResultBinding
+import com.rokusodo.healthcheckup.ui.ocrresult.OcrResultViewModel
+import com.rokusodo.healthcheckup.ui.ocrresult.SaveState
+import kotlinx.coroutines.launch
+import java.util.Calendar
 
 /**
  * OCR結果を表示し、各行（項目名・値・単位）を編集可能なフォームで提示するフラグメント。
@@ -21,6 +31,11 @@ class OcrResultFragment : Fragment() {
 
     private val args: OcrResultFragmentArgs by navArgs()
     private lateinit var ocrItemAdapter: OcrItemAdapter
+
+    private val viewModel: OcrResultViewModel by viewModels {
+        val app = requireActivity().application as HealthCheckupApp
+        OcrResultViewModel.Factory(app.repository)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -40,6 +55,7 @@ class OcrResultFragment : Fragment() {
         setupErrorMessage(errorType)
         setupRecyclerView(ocrText)
         setupSaveButton()
+        observeSaveState()
     }
 
     /**
@@ -88,13 +104,77 @@ class OcrResultFragment : Fragment() {
 
     private fun setupSaveButton() {
         binding.btnSave.setOnClickListener {
-            val items = ocrItemAdapter.getItems()
-            // Sprint 2 で Room DB への保存を実装する
-            Toast.makeText(
-                requireContext(),
-                "保存機能はSprint 2で実装予定です（${items.size}件）",
-                Toast.LENGTH_SHORT
-            ).show()
+            showDatePickerDialog()
+        }
+    }
+
+    private fun showDatePickerDialog() {
+        val calendar = Calendar.getInstance()
+        DatePickerDialog(
+            requireContext(),
+            { _, year, month, dayOfMonth ->
+                val date = "%04d-%02d-%02d".format(year, month + 1, dayOfMonth)
+                showFacilityInputDialog(date)
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        ).show()
+    }
+
+    private fun showFacilityInputDialog(date: String) {
+        val editText = android.widget.EditText(requireContext()).apply {
+            hint = getString(R.string.hint_facility)
+        }
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle(getString(R.string.dialog_title_facility))
+            .setView(editText)
+            .setPositiveButton(getString(R.string.btn_save)) { _, _ ->
+                val facility = editText.text?.toString() ?: ""
+                val items = ocrItemAdapter.getItems()
+                viewModel.saveRecord(date, facility, items)
+            }
+            .setNegativeButton(getString(R.string.btn_cancel), null)
+            .show()
+    }
+
+    private fun observeSaveState() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.saveState.collect { state ->
+                    when (state) {
+                        is SaveState.Idle -> {
+                            binding.btnSave.isEnabled = true
+                            binding.progressSave.visibility = View.GONE
+                        }
+                        is SaveState.Loading -> {
+                            binding.btnSave.isEnabled = false
+                            binding.progressSave.visibility = View.VISIBLE
+                        }
+                        is SaveState.Success -> {
+                            binding.btnSave.isEnabled = true
+                            binding.progressSave.visibility = View.GONE
+                            Toast.makeText(
+                                requireContext(),
+                                getString(R.string.msg_save_success),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            viewModel.resetState()
+                            findNavController().popBackStack(R.id.mainFragment, false)
+                        }
+                        is SaveState.Error -> {
+                            binding.btnSave.isEnabled = true
+                            binding.progressSave.visibility = View.GONE
+                            Toast.makeText(
+                                requireContext(),
+                                getString(R.string.msg_save_error, state.message),
+                                Toast.LENGTH_LONG
+                            ).show()
+                            viewModel.resetState()
+                        }
+                    }
+                }
+            }
         }
     }
 

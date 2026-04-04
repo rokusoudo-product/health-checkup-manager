@@ -5,7 +5,7 @@
     android:id="@+id/nav_graph"
     app:startDestination="@id/mainFragment">
 
-    <!-- ホーム画面（仮置き） -->
+    <!-- ホーム画面（診断記録一覧） -->
     <fragment
         android:id="@+id/mainFragment"
         android:name="com.rokusodo.healthcheckup.MainFragment"
@@ -15,6 +15,14 @@
         <action
             android:id="@+id/action_main_to_camera"
             app:destination="@id/cameraFragment" />
+
+        <action
+            android:id="@+id/action_main_to_record_detail"
+            app:destination="@id/recordDetailFragment" />
+
+        <action
+            android:id="@+id/action_main_to_item_master"
+            app:destination="@id/itemMasterFragment" />
     </fragment>
 
     <!-- 撮影画面 -->
@@ -42,5 +50,24 @@
             app:argType="string"
             android:defaultValue="" />
     </fragment>
+
+    <!-- 診断記録詳細画面 -->
+    <fragment
+        android:id="@+id/recordDetailFragment"
+        android:name="com.rokusodo.healthcheckup.ui.detail.RecordDetailFragment"
+        android:label="@string/title_record_detail"
+        tools:layout="@layout/fragment_record_detail">
+
+        <argument
+            android:name="recordId"
+            app:argType="long" />
+    </fragment>
+
+    <!-- 項目マスター管理画面 -->
+    <fragment
+        android:id="@+id/itemMasterFragment"
+        android:name="com.rokusodo.healthcheckup.ui.master.ItemMasterFragment"
+        android:label="@string/title_item_master"
+        tools:layout="@layout/fragment_item_master" />
 
 </navigation>
