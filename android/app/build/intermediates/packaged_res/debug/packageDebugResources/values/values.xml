@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="abnormal_color">#FFD62828</color>
+    <color name="background">#FFF8FAFB</color>
+    <color name="black">#FF000000</color>
+    <color name="on_background">#FF1A1A2E</color>
+    <color name="on_primary">#FFFFFFFF</color>
+    <color name="primary">#FF006D77</color>
+    <color name="primary_variant">#FF004E59</color>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="secondary">#FF83C5BE</color>
+    <color name="secondary_variant">#FF5AABB3</color>
+    <color name="surface">#FFFFFFFF</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="white">#FFFFFFFF</color>
+    <string name="app_name">健康診断マネージャー</string>
+    <string name="btn_add_master">マスター追加</string>
+    <string name="btn_add_new">新規追加</string>
+    <string name="btn_cancel">キャンセル</string>
+    <string name="btn_capture">撮影</string>
+    <string name="btn_edit">編集</string>
+    <string name="btn_google_sign_in">Googleでログイン</string>
+    <string name="btn_graph">グラフ</string>
+    <string name="btn_save">保存</string>
+    <string name="btn_start_ocr">OCR開始 (%d枚)</string>
+    <string name="dialog_title_add_master">項目マスター追加</string>
+    <string name="dialog_title_edit_master">項目マスター編集</string>
+    <string name="dialog_title_facility">医療機関名（任意）</string>
+    <string name="error_insufficient_text">読み取りに失敗しました。手動で入力してください</string>
+    <string name="error_low_confidence">もう少し近づけて撮影してください</string>
+    <string name="error_ocr_failed">OCR処理中にエラーが発生しました</string>
+    <string name="gcm_defaultSenderId" translatable="false">735205368933</string>
+    <string name="google_api_key" translatable="false">AIzaSyAJWbt3PtpyyJ4hr8fDHCSLzTeibUZYMaQ</string>
+    <string name="google_app_id" translatable="false">1:735205368933:android:2656ef7814c65e0d5b928c</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyAJWbt3PtpyyJ4hr8fDHCSLzTeibUZYMaQ</string>
+    <string name="google_storage_bucket" translatable="false">health-checkup-manager.firebasestorage.app</string>
+    <string name="hint_facility">例: ○○クリニック</string>
+    <string name="hint_item_name">項目名</string>
+    <string name="hint_ref_max">基準値（上限）</string>
+    <string name="hint_ref_min">基準値（下限）</string>
+    <string name="hint_unit">単位</string>
+    <string name="hint_value">値</string>
+    <string name="label_captured_count">撮影済み: %d枚</string>
+    <string name="label_no_graph_data">グラフを表示できません</string>
+    <string name="label_ref_max">上限</string>
+    <string name="label_ref_min">下限</string>
+    <string name="menu_abnormal_list">基準値外一覧</string>
+    <string name="menu_item_master">基準値マスター</string>
+    <string name="menu_sign_out">サインアウト</string>
+    <string name="msg_no_abnormal_items">基準値外の項目はありません</string>
+    <string name="msg_no_records">まだ記録がありません</string>
+    <string name="msg_save_error">保存に失敗しました: %s</string>
+    <string name="msg_save_success">保存しました</string>
+    <string name="msg_sign_in_failed">ログインに失敗しました</string>
+    <string name="notification_channel_name">基準値外アラート</string>
+    <string name="notification_text_abnormal">基準値外の項目があります: %s</string>
+    <string name="notification_title">健康診断結果</string>
+    <string name="project_id" translatable="false">health-checkup-manager</string>
+    <string name="title_abnormal_list">基準値外一覧</string>
+    <string name="title_home">診断記録</string>
+    <string name="title_item_master">基準値マスター</string>
+    <string name="title_login">ログイン</string>
+    <string name="title_ocr_result">OCR結果確認</string>
+    <string name="title_record_detail">検査結果詳細</string>
+    <string name="title_trend_graph">経年グラフ</string>
+    <style name="Theme.HealthCheckupManager" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryVariant">@color/primary_variant</item>
+        <item name="colorOnPrimary">@color/on_primary</item>
+        <item name="colorSecondary">@color/secondary</item>
+        <item name="colorSecondaryVariant">@color/secondary_variant</item>
+        <item name="colorOnSecondary">@color/on_background</item>
+        <item name="android:colorBackground">@color/background</item>
+        <item name="android:statusBarColor">@color/primary_variant</item>
+    </style>
+</resources>

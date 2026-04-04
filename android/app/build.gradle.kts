@@ -11,7 +11,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.rokusodo.healthcheckup"
+        applicationId = "com.rokusoudo.healthcheckup"
         minSdk = 26
         targetSdk = 35
         versionCode = 1

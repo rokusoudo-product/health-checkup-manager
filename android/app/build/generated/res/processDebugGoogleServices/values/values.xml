@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gcm_defaultSenderId" translatable="false">735205368933</string>
+    <string name="google_api_key" translatable="false">AIzaSyAJWbt3PtpyyJ4hr8fDHCSLzTeibUZYMaQ</string>
+    <string name="google_app_id" translatable="false">1:735205368933:android:2656ef7814c65e0d5b928c</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyAJWbt3PtpyyJ4hr8fDHCSLzTeibUZYMaQ</string>
+    <string name="google_storage_bucket" translatable="false">health-checkup-manager.firebasestorage.app</string>
+    <string name="project_id" translatable="false">health-checkup-manager</string>
+</resources>
