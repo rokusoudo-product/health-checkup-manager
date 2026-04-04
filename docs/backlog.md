@@ -64,13 +64,13 @@
 | T-104 | 項目マスター管理（基準値設定） | engineer | ✅ 完了 |
 | T-105 | OCRエラーハンドリング実装 | engineer | ✅ 完了 |
 
-### Sprint 3（TBD）: グラフ・通知
+### Sprint 3（4/4）: グラフ・通知
 
 | チケット | タスク | 担当 | ステータス |
 |---------|--------|------|-----------|
-| T-201 | MPAndroidChart 経年グラフ実装 | engineer | 未着手 |
-| T-202 | 基準値外アラート通知 | engineer | 未着手 |
-| T-203 | 通知一覧画面 | engineer | 未着手 |
+| T-201 | MPAndroidChart 経年グラフ実装 | engineer | ✅ 完了 |
+| T-202 | 基準値外アラート通知 | engineer | ✅ 完了 |
+| T-203 | 通知一覧画面 | engineer | ✅ 完了 |
 
 ### Sprint 4（TBD）: 認証・仕上げ
 
