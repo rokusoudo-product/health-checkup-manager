@@ -58,11 +58,11 @@
 
 | チケット | タスク | 担当 | ステータス |
 |---------|--------|------|-----------|
-| T-101 | OCR結果確認・手動補正画面 | engineer | 未着手 |
-| T-102 | Room DB 設計・実装（ExaminationRecord / Item） | engineer | 未着手 |
-| T-103 | 記録一覧・詳細画面 | engineer | 未着手 |
-| T-104 | 項目マスター管理（基準値設定） | engineer | 未着手 |
-| T-105 | OCRエラーハンドリング実装 | engineer | 未着手 |
+| T-101 | OCR結果確認・手動補正画面 | engineer | ✅ 完了 |
+| T-102 | Room DB 設計・実装（ExaminationRecord / Item） | engineer | ✅ 完了 |
+| T-103 | 記録一覧・詳細画面 | engineer | ✅ 完了 |
+| T-104 | 項目マスター管理（基準値設定） | engineer | ✅ 完了 |
+| T-105 | OCRエラーハンドリング実装 | engineer | ✅ 完了 |
 
 ### Sprint 3（TBD）: グラフ・通知
 
