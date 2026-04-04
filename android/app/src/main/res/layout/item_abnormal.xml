@@ -15,7 +15,7 @@
         android:layout_height="wrap_content"
         android:textSize="15sp"
         android:textStyle="bold"
-        android:textColor="@android:color/holo_red_dark"
+        android:textColor="@color/abnormal_color"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toStartOf="@id/tv_abnormal_value"
@@ -28,7 +28,7 @@
         android:layout_height="wrap_content"
         android:textSize="15sp"
         android:textStyle="bold"
-        android:textColor="@android:color/holo_red_dark"
+        android:textColor="@color/abnormal_color"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         tools:text="160 mmHg" />

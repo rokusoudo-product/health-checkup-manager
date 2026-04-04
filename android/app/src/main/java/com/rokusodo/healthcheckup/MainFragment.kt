@@ -15,6 +15,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.firebase.auth.FirebaseAuth
 import com.rokusodo.healthcheckup.databinding.FragmentMainBinding
 import com.rokusodo.healthcheckup.ui.main.MainViewModel
 import com.rokusodo.healthcheckup.ui.main.RecordListAdapter
@@ -87,10 +90,24 @@ class MainFragment : Fragment() {
                         findNavController().navigate(R.id.action_main_to_abnormal_list)
                         true
                     }
+                    R.id.action_sign_out -> {
+                        signOut()
+                        true
+                    }
                     else -> false
                 }
             }
         }, viewLifecycleOwner, Lifecycle.State.RESUMED)
+    }
+
+    private fun signOut() {
+        // Firebase Auth からサインアウト
+        FirebaseAuth.getInstance().signOut()
+        // Google Sign-In のキャッシュもクリア
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).build()
+        GoogleSignIn.getClient(requireActivity(), gso).signOut()
+        // ログイン画面へ遷移（バックスタックを消去）
+        findNavController().navigate(R.id.action_main_to_login)
     }
 
     private fun observeRecords() {

@@ -22,6 +22,8 @@ coroutines = "1.8.1"
 # Activity / Fragment
 activity = "1.9.1"
 fragment = "1.8.1"
+# Google Play Services Auth
+playServicesAuth = "21.2.0"
 
 [libraries]
 # AndroidX Core
@@ -59,6 +61,9 @@ mpandroidchart = { group = "com.github.PhilJay", name = "MPAndroidChart", versio
 # Coroutines
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
+
+# Google Play Services Auth (Google Sign-In)
+play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "playServicesAuth" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -7,4 +7,15 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Sprint 4: T-302 health-app theme colors -->
+    <color name="primary">#FF006D77</color>
+    <color name="primary_variant">#FF004E59</color>
+    <color name="secondary">#FF83C5BE</color>
+    <color name="secondary_variant">#FF5AABB3</color>
+    <color name="background">#FFF8FAFB</color>
+    <color name="surface">#FFFFFFFF</color>
+    <color name="on_primary">#FFFFFFFF</color>
+    <color name="on_background">#FF1A1A2E</color>
+    <color name="abnormal_color">#FFD62828</color>
 </resources>

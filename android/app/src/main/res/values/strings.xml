@@ -60,4 +60,10 @@
 
     <!-- Sprint 3: Graph button -->
     <string name="btn_graph">グラフ</string>
+
+    <!-- Sprint 4: T-301 Auth -->
+    <string name="title_login">ログイン</string>
+    <string name="btn_google_sign_in">Googleでログイン</string>
+    <string name="menu_sign_out">サインアウト</string>
+    <string name="msg_sign_in_failed">ログインに失敗しました</string>
 </resources>

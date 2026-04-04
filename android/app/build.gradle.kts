@@ -77,6 +77,9 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth.ktx)
 
+    // Google Sign-In
+    implementation(libs.play.services.auth)
+
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
     // Coroutines support for Google Play Services / ML Kit Tasks

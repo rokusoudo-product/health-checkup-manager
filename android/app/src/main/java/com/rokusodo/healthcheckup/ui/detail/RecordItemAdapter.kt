@@ -1,11 +1,12 @@
 package com.rokusodo.healthcheckup.ui.detail
 
-import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.rokusodo.healthcheckup.R
 import com.rokusodo.healthcheckup.data.db.entity.ExaminationItem
 import com.rokusodo.healthcheckup.databinding.ItemExaminationItemBinding
 
@@ -38,13 +39,14 @@ class RecordItemAdapter(
 
             // 薬事法対応: isAbnormal は表示ハイライトのみ
             if (item.isAbnormal) {
-                binding.tvItemName.setTextColor(Color.RED)
-                binding.tvItemValue.setTextColor(Color.RED)
+                val abnormalColor = ContextCompat.getColor(binding.root.context, R.color.abnormal_color)
+                binding.tvItemName.setTextColor(abnormalColor)
+                binding.tvItemValue.setTextColor(abnormalColor)
             } else {
                 val typedArray = binding.tvItemName.context.theme.obtainStyledAttributes(
                     intArrayOf(android.R.attr.textColorPrimary)
                 )
-                val defaultColor = typedArray.getColor(0, Color.BLACK)
+                val defaultColor = typedArray.getColor(0, ContextCompat.getColor(binding.root.context, R.color.on_background))
                 typedArray.recycle()
                 binding.tvItemName.setTextColor(defaultColor)
                 binding.tvItemValue.setTextColor(defaultColor)

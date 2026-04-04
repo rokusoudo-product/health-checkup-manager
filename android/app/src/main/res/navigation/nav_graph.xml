@@ -5,6 +5,19 @@
     android:id="@+id/nav_graph"
     app:startDestination="@id/mainFragment">
 
+    <!-- ログイン画面 -->
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.rokusodo.healthcheckup.ui.auth.LoginFragment"
+        android:label="@string/title_login"
+        tools:layout="@layout/fragment_login">
+        <action
+            android:id="@+id/action_login_to_main"
+            app:destination="@id/mainFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
     <!-- ホーム画面（診断記録一覧） -->
     <fragment
         android:id="@+id/mainFragment"
@@ -27,6 +40,12 @@
         <action
             android:id="@+id/action_main_to_abnormal_list"
             app:destination="@id/abnormalListFragment" />
+
+        <action
+            android:id="@+id/action_main_to_login"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/mainFragment"
+            app:popUpToInclusive="true" />
     </fragment>
 
     <!-- 撮影画面 -->

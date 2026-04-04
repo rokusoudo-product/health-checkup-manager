@@ -18,6 +18,7 @@ import com.github.mikephil.charting.formatter.ValueFormatter
 import com.rokusodo.healthcheckup.HealthCheckupApp
 import com.rokusodo.healthcheckup.R
 import com.rokusodo.healthcheckup.data.db.dao.ItemTrend
+import androidx.core.content.ContextCompat
 import com.rokusodo.healthcheckup.databinding.FragmentTrendGraphBinding
 import kotlinx.coroutines.launch
 
@@ -122,7 +123,7 @@ class TrendGraphFragment : Fragment() {
 
         if (refMin != null) {
             val limitLine = LimitLine(refMin.toFloat()).apply {
-                lineColor = android.graphics.Color.RED
+                lineColor = ContextCompat.getColor(requireContext(), R.color.abnormal_color)
                 lineWidth = 1.5f
                 enableDashedLine(10f, 5f, 0f)
             }
@@ -130,7 +131,7 @@ class TrendGraphFragment : Fragment() {
         }
         if (refMax != null) {
             val limitLine = LimitLine(refMax.toFloat()).apply {
-                lineColor = android.graphics.Color.RED
+                lineColor = ContextCompat.getColor(requireContext(), R.color.abnormal_color)
                 lineWidth = 1.5f
                 enableDashedLine(10f, 5f, 0f)
             }
