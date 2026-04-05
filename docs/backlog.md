@@ -102,9 +102,9 @@
 
 | チケット | タスク | 担当 | ステータス |
 |---------|--------|------|-----------|
-| T-401 | Firestore SDK追加・セキュリティルール設定 | engineer | 未着手 |
-| T-402 | Repository層にFirestore書き込み追加（Room→Firestore同期） | engineer | 未着手 |
-| T-403 | Firestore→Room の初回ログイン時データ取得（他端末データ復元） | engineer | 未着手 |
+| T-401 | Firestore SDK追加・セキュリティルール設定 | engineer | ✅ 完了 |
+| T-402 | Repository層にFirestore書き込み追加（Room→Firestore同期） | engineer | ✅ 完了 |
+| T-403 | Firestore→Room の初回ログイン時データ取得（他端末データ復元） | engineer | ✅ 完了 |
 
 ### Sprint 6: Web版MVP（手動入力・閲覧）
 
