@@ -9,28 +9,39 @@
 ## 1. アーキテクチャ概要
 
 ```
-[Android アプリ]
-    │
-    ├── CameraX（撮影）
-    │       ↓
-    ├── ML Kit Text Recognition v2（OCR）
-    │       ↓
-    ├── OCR結果確認・手動補正UI
-    │       ↓
-    ├── Room DB（ローカル保存）
-    │       ↓
-    ├── MPAndroidChart（グラフ表示）
+[Android アプリ]                        [Web アプリ]
+    │                                       │
+    ├── CameraX（撮影）                     ├── 手動入力フォーム
+    │       ↓                               │
+    ├── ML Kit OCR                          ├── 記録一覧・詳細閲覧
+    │       ↓                               │
+    ├── OCR結果確認・手動補正UI             ├── 経年グラフ（Chart.js）
+    │       ↓                               │
+    ├── Room DB（オフラインキャッシュ）      └── Firebase Auth（Google SSO）
+    │       ↕ 同期                                  │
+    ├── Firestore SDK ─────────────────── Cloud Firestore（共有DB）
+    │                                               │
+    ├── MPAndroidChart（グラフ表示）        Firebase Hosting
     │
     └── Firebase Auth（Google SSO）
 ```
+
+### データ同期方針
+
+- **Cloud Firestore** を単一の真実の源（Single Source of Truth）とする
+- **Android**: Room をオフラインキャッシュとして保持し、Firestore と双方向同期
+- **Web**: Firestore を直接参照（ローカルキャッシュ不要、MVP段階）
+- **認証**: 両プラットフォームとも Firebase Auth（同一プロジェクト）でユーザーIDを共有
+- **データ分離**: Firestoreのパス `users/{uid}/records/{recordId}` でユーザーごとに分離
 
 ### フェーズ分割
 
 | フェーズ | 内容 | 目標時期 |
 |---------|------|---------|
-| MVP (Phase 1) | カメラ撮影→OCR→手動補正→ローカル保存→基本表示 | 4/8 設計確定・スコープ定義 |
-| Phase 2 | グラフ比較・基準値アラート・通知機能 | TBD |
-| Phase 3 | Google SSO・クラウド同期（Firestore） | TBD |
+| Phase 1 (完了) | Android: カメラOCR→手動補正→Room保存→グラフ・通知 | 4/4 完了 |
+| Phase 2 (完了) | Android: Firebase Auth Google SSO・UIブラッシュアップ | 4/4 完了 |
+| Phase 3 | Android: Firestore同期追加（Room→Firestoreへの書き込み） | TBD |
+| Phase 4 | Web: Firebase Hosting + React + Firestore（手動入力・閲覧） | TBD |
 
 ---
 
@@ -57,13 +68,18 @@
 - ImageAnalysis APIでリアルタイムOCRプレビューも可能
 - ライフサイクル管理が容易
 
-### 2-3. ローカルDB
+### 2-3. ローカルDB / クラウドDB
 
-**選定: Room**
+**Android: Room（オフラインキャッシュ） + Cloud Firestore（クラウド同期）**
 
-- MVP では端末内完結（クラウド不要でシンプル）
-- 動的な検査項目はスキーマを柔軟に設計（下記参照）
-- 将来的にFirestore同期が必要な場合、Repositoryパターンで差し替え容易
+- Room は既存実装を維持しオフライン対応を担保
+- Firestore SDK を追加し、保存時に Room と Firestore の両方へ書き込む
+- Repositoryパターン済みのため、Firestoreの追加は Repository 層のみ修正で対応可能
+
+**Web: Cloud Firestore（直接参照）**
+
+- Room不要。Firestoreをリアルタイムリスナーで参照
+- オフライン対応はFirestore SDKの組み込みキャッシュに委ねる（MVP段階）
 
 ### 2-4. グラフ
 
@@ -77,9 +93,30 @@
 
 **選定: Firebase Authentication（Google SSO）**
 
-- hitokazu_game と同一Firebase基盤を利用可能
-- Google Sign-In APIで実装容易
+- Android・Web 両プラットフォームで同一Firebase プロジェクトを使用
+- 同一ユーザーIDにより Firestore 上でデータを共有
 - フォールバック: メール＋パスワード認証
+
+### 2-6. Webフロントエンド
+
+**選定: React + TypeScript + Vite**
+
+| 比較項目 | React | Next.js | Vue |
+|---------|-------|---------|-----|
+| Firebase連携 | ✅ 容易 | ✅ 容易 | ✅ 容易 |
+| 学習コスト | 低〜中 | 中 | 低〜中 |
+| SSR必要性 | ❌ 不要（認証後のSPA） | 過剰 | — |
+| ホスティング | Firebase Hosting（SPA） | — | — |
+
+**採用理由:** 認証後のSPAのため、SSRは不要。ViteによるシンプルなReact + TypeScript構成でFirebase Hostingに静的デプロイ。
+
+### 2-7. Webホスティング
+
+**選定: Firebase Hosting**
+
+- Firebase Auth / Firestore と同一プロジェクトで管理
+- CLIデプロイ（`firebase deploy`）で簡易運用
+- カスタムドメイン対応
 
 ---
 
@@ -113,6 +150,30 @@ ItemMaster（項目マスター）
 ├── referenceMin: Double?
 └── referenceMax: Double?
 ```
+
+### Firestoreデータモデル
+
+```
+users/{uid}/
+  ├── records/{recordId}/
+  │     ├── date: Timestamp
+  │     ├── facility: String
+  │     ├── createdAt: Timestamp
+  │     └── items: Array<Map>
+  │           ├── itemName: String
+  │           ├── value: String
+  │           ├── unit: String
+  │           ├── referenceMin: Number?
+  │           ├── referenceMax: Number?
+  │           └── isAbnormal: Boolean
+  └── itemMasters/{itemName}/
+        ├── unit: String
+        ├── referenceMin: Number?
+        └── referenceMax: Number?
+```
+
+- `records` は Android（OCR/手動）・Web（手動）の両方から書き込み
+- `itemMasters` はデバイス間で共有する項目マスター
 
 ### OCR結果の構造化フロー
 
@@ -174,8 +235,8 @@ ItemMaster（項目マスター）
 
 | 項目 | 要件 |
 |------|------|
-| プライバシー | 医療データはローカル保存（クラウド送信しない、MVP段階） |
-| パーミッション | CAMERA のみ（MVP）、INTERNET はFirebase Auth用 |
+| プライバシー | 医療データはFirestore（Google Cloud）に保存。ユーザーIDで分離、他ユーザーから参照不可 |
+| パーミッション | CAMERA（Android）、INTERNET（Firebase Auth / Firestore通信） |
 | 最小サポートAPI | Android 8.0 (API 26) 以上 |
 | 薬事法対応 | 改善アドバイス・医療判断の表示を一切行わない |
 
