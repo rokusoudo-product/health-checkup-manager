@@ -29,12 +29,9 @@ class MainActivity : AppCompatActivity() {
         val navInflater = navHostFragment.navController.navInflater
         val graph = navInflater.inflate(R.navigation.nav_graph)
 
-        val currentUser = FirebaseAuth.getInstance().currentUser
-        if (currentUser != null) {
-            graph.setStartDestination(R.id.mainFragment)
-        } else {
-            graph.setStartDestination(R.id.loginFragment)
-        }
+        // TODO: Firebase Console で Web Client ID を設定後に認証を有効化する
+        // 現在は google-services.json に Web Client ID 未登録のため認証をスキップ
+        graph.setStartDestination(R.id.mainFragment)
 
         navController = navHostFragment.navController
         navController.graph = graph

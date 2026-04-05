@@ -114,6 +114,7 @@ string btn_google_sign_in
 string btn_graph
 string btn_save
 string btn_start_ocr
+string default_web_client_id
 string dialog_title_add_master
 string dialog_title_edit_master
 string dialog_title_facility

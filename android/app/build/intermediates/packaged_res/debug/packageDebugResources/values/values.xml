@@ -26,6 +26,7 @@
     <string name="btn_graph">グラフ</string>
     <string name="btn_save">保存</string>
     <string name="btn_start_ocr">OCR開始 (%d枚)</string>
+    <string name="default_web_client_id" translatable="false">735205368933-ndisk3lrvmgicvss0nfonv3o80nnavll.apps.googleusercontent.com</string>
     <string name="dialog_title_add_master">項目マスター追加</string>
     <string name="dialog_title_edit_master">項目マスター編集</string>
     <string name="dialog_title_facility">医療機関名（任意）</string>
