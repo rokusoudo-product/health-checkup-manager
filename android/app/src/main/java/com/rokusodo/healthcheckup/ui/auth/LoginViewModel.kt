@@ -1,9 +1,11 @@
 package com.rokusodo.healthcheckup.ui.auth
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import com.rokusodo.healthcheckup.HealthCheckupApp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,8 +15,9 @@ import kotlinx.coroutines.tasks.await
 /**
  * ログイン画面の ViewModel。
  * Firebase Auth を使った Google SSO の状態を管理する。
+ * ログイン成功後、Firestoreから既存データをRoomへ復元する（T-403）。
  */
-class LoginViewModel : ViewModel() {
+class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
     sealed class LoginState {
         object Idle : LoginState()
@@ -27,9 +30,11 @@ class LoginViewModel : ViewModel() {
     val loginState: StateFlow<LoginState> = _loginState.asStateFlow()
 
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+    private val repository = (application as HealthCheckupApp).repository
 
     /**
      * Google ID トークンを使って Firebase Auth でサインインする。
+     * サインイン成功後、Firestoreから既存データをRoomへ復元する。
      */
     fun signIn(idToken: String) {
         viewModelScope.launch {
@@ -37,6 +42,13 @@ class LoginViewModel : ViewModel() {
             try {
                 val credential = GoogleAuthProvider.getCredential(idToken, null)
                 auth.signInWithCredential(credential).await()
+
+                // Firestore → Room 復元（他端末で入力したデータをローカルに同期）
+                val uid = auth.currentUser?.uid
+                if (uid != null) {
+                    repository.restoreFromFirestore(uid)
+                }
+
                 _loginState.value = LoginState.Success
             } catch (e: Exception) {
                 _loginState.value = LoginState.Error(e.message ?: "Unknown error")

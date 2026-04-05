@@ -76,9 +76,13 @@ dependencies {
     // Firebase (BOM + Auth)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth.ktx)
+    implementation(libs.firebase.firestore.ktx)
 
     // Google Sign-In
     implementation(libs.play.services.auth)
+
+    // CameraX + Firestore の Guava 依存関係競合を回避
+    implementation("com.google.guava:guava:32.1.2-android")
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
