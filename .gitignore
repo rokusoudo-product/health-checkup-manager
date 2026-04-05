@@ -35,6 +35,11 @@ android/.gradle/
 # Zone Identifier files (Windows)
 *:Zone.Identifier
 
+# Web env
+web/.env.local
+web/node_modules/
+web/dist/
+
 # Keys / secrets
 *.keystore
 *.jks
