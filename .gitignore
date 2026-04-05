@@ -27,6 +27,14 @@ local.properties
 # Firebase
 google-services.json
 
+# Build outputs
+android/app/build/
+android/build/
+android/.gradle/
+
+# Zone Identifier files (Windows)
+*:Zone.Identifier
+
 # Keys / secrets
 *.keystore
 *.jks
