@@ -110,11 +110,11 @@
 
 | チケット | タスク | 担当 | ステータス |
 |---------|--------|------|-----------|
-| T-501 | Webプロジェクト初期構成（React + TypeScript + Vite + Firebase） | engineer | 未着手 |
-| T-502 | Firebase Auth Google SSOログイン画面 | engineer | 未着手 |
-| T-503 | 記録一覧・詳細閲覧画面（Firestore連携） | engineer | 未着手 |
-| T-504 | 手動入力フォーム（検査日・施設名・項目追加） | engineer | 未着手 |
-| T-505 | 項目マスター管理（基準値設定） | engineer | 未着手 |
+| T-501 | Webプロジェクト初期構成（React + TypeScript + Vite + Firebase） | engineer | ✅ 完了 |
+| T-502 | Firebase Auth Google SSOログイン画面 | engineer | ✅ 完了 |
+| T-503 | 記録一覧・詳細閲覧画面（Firestore連携） | engineer | ✅ 完了 |
+| T-504 | 手動入力フォーム（検査日・施設名・項目追加） | engineer | ✅ 完了 |
+| T-505 | 項目マスター管理（基準値設定） | engineer | ✅ 完了 |
 
 ### Sprint 7: Web版グラフ・仕上げ
 
