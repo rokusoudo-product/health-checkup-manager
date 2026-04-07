@@ -22,6 +22,25 @@ An Android app for managing health checkup results with OCR scanning, trend grap
 | Graph | MPAndroidChart |
 | Auth | Firebase Auth (Google SSO) |
 
+## Getting Started
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/your-username/health-checkup-manager.git
+   cd health-checkup-manager/android
+   ```
+
+2. **Set up Firebase:**
+   - Create a new Firebase project at [https://console.firebase.google.com/](https://console.firebase.google.com/).
+   - Add an Android app to your Firebase project with the package name `com.example.healthcheckupmanager`.
+   - Download the `google-services.json` file and place it in the `android/app/` directory.
+   - Enable Google Sign-In in the Firebase console under **Authentication > Sign-in method**.
+
+3. **Build and run the app:**
+   - Open the `android` directory in Android Studio.
+   - Let Gradle sync and download the required dependencies.
+   - Run the app on an emulator or a physical device.
+
 ## Project Structure
 
 ```
