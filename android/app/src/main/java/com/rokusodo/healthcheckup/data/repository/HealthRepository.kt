@@ -77,6 +77,8 @@ class HealthRepository(
 
     fun getAllMasters(): Flow<List<ItemMaster>> = db.masterDao().getAll()
 
+    // TODO: 項目マスターの基準値変更時、既存の ExaminationItem.isAbnormal は再計算されない。
+    // P1スコープ外のため対応保留（次回スプリントで対応予定）。
     suspend fun upsertMaster(master: ItemMaster) {
         db.masterDao().upsert(master)
         // 項目マスターもFirestoreへ同期

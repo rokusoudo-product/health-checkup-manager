@@ -8,6 +8,8 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.MenuProvider
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -71,6 +73,22 @@ class MainFragment : Fragment() {
     private fun setupFab() {
         binding.fabAdd.setOnClickListener {
             findNavController().navigate(R.id.action_main_to_camera)
+        }
+        applyFabInsets()
+    }
+
+    /**
+     * targetSdk 35 の edge-to-edge 強制によりFABがナビゲーションバーに被るため、
+     * ナビゲーションバー分をボトムマージンに加算する。
+     */
+    private fun applyFabInsets() {
+        val initialMarginBottom = (binding.fabAdd.layoutParams as ViewGroup.MarginLayoutParams).bottomMargin
+        ViewCompat.setOnApplyWindowInsetsListener(binding.fabAdd) { view, insets ->
+            val navBarInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            val params = view.layoutParams as ViewGroup.MarginLayoutParams
+            params.bottomMargin = initialMarginBottom + navBarInsets.bottom
+            view.layoutParams = params
+            insets
         }
     }
 
