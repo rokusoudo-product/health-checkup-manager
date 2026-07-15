@@ -28,6 +28,9 @@
     <string name="title_home">診断記録</string>
     <string name="btn_add_new">新規追加</string>
     <string name="msg_no_records">まだ記録がありません</string>
+    <string name="msg_no_records_guide">右下の＋ボタンから健診結果を撮影・追加できます</string>
+    <string name="badge_warning">要注意 %1$d件</string>
+    <string name="badge_normal">異常なし</string>
     <string name="menu_item_master">基準値マスター</string>
 
     <!-- Record detail screen -->

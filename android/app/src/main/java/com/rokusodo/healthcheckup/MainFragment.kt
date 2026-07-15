@@ -131,19 +131,13 @@ class MainFragment : Fragment() {
     private fun observeRecords() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.records.collect { records ->
-                    if (records.isEmpty()) {
-                        binding.tvEmptyMessage.visibility = View.VISIBLE
+                viewModel.records.collect { items ->
+                    if (items.isEmpty()) {
+                        binding.emptyState.visibility = View.VISIBLE
                         binding.recyclerRecords.visibility = View.GONE
                     } else {
-                        binding.tvEmptyMessage.visibility = View.GONE
+                        binding.emptyState.visibility = View.GONE
                         binding.recyclerRecords.visibility = View.VISIBLE
-                        val items = records.map { record ->
-                            RecordListAdapter.RecordWithAbnormalCount(
-                                record = record,
-                                abnormalCount = 0 // 詳細なカウントは別途Flow取得が必要なため0で初期化
-                            )
-                        }
                         recordListAdapter.submitList(items)
                     }
                 }

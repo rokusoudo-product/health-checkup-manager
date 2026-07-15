@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.HealthCheckupManager" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <!-- P1: 親を DayNight から Light に変更。
+         背景/surface はライト固定色でハードコードされているのに親が DayNight だと、
+         端末がダークモードのとき textColorPrimary/OnSurface だけが白系に反転し、
+         ライト背景に白文字＝判読不能（報告された「極端に薄いグレー」の主因）になる。
+         Light に固定し、テキスト色も必ずセマンティックカラー経由で明示する。 -->
+    <style name="Theme.HealthCheckupManager" parent="Theme.MaterialComponents.Light.NoActionBar">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryVariant">@color/primary_variant</item>
         <item name="colorOnPrimary">@color/on_primary</item>
@@ -8,6 +13,13 @@
         <item name="colorSecondaryVariant">@color/secondary_variant</item>
         <item name="colorOnSecondary">@color/on_background</item>
         <item name="android:colorBackground">@color/background</item>
+        <!-- P1: surface とテキストのセマンティックカラーを明示（薄色継承の防止） -->
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="colorOnBackground">@color/text_primary</item>
+        <item name="colorError">@color/status_warning</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
         <!-- targetSdk 35 では edge-to-edge が強制されるため statusBarColor は無効。
              ステータスバー背景は MainActivity の window insets 処理でツールバーが
              covering する。アイコン色のみここで制御する。 -->

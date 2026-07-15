@@ -18,4 +18,16 @@
     <color name="on_primary">#FFFFFFFF</color>
     <color name="on_background">#FF1A1A2E</color>
     <color name="abnormal_color">#FFD62828</color>
+
+    <!-- P1: セマンティックなテキスト色（薄いグレーのハードコードを廃し、
+         必ずテーマ経由で参照する。背景 #F8FAFB / surface #FFFFFF 上で WCAG AA を満たす） -->
+    <color name="text_primary">#FF1A1A2E</color>      <!-- 本文主要色: 対 背景 約15:1 -->
+    <color name="text_secondary">#FF556070</color>    <!-- 補助色: 対 背景 約5.6:1 (AA) -->
+    <color name="divider">#FFE2E8EC</color>
+
+    <!-- P1/共通: 状態カラー（正常/注意/異常のみに意味付け） -->
+    <color name="status_normal">#FF1B5E20</color>         <!-- 正常テキスト（濃緑） -->
+    <color name="status_normal_bg">#FFE6F4EA</color>      <!-- 正常バッジ背景 -->
+    <color name="status_warning">#FFC62828</color>        <!-- 要注意/異常バッジ背景（赤） -->
+    <color name="status_warning_on">#FFFFFFFF</color>     <!-- 要注意/異常バッジ文字 -->
 </resources>

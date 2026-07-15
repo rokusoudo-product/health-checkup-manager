@@ -72,6 +72,10 @@ class HealthRepository(
 
     fun getAllRecords(): Flow<List<ExaminationRecord>> = db.recordDao().getAll()
 
+    /** 記録ごとの基準値外項目数（診断記録一覧の状態バッジ用）。 */
+    fun getAbnormalCountsByRecord(): Flow<List<com.rokusodo.healthcheckup.data.db.dao.RecordAbnormalCount>> =
+        db.itemDao().getAbnormalCountsByRecord()
+
     fun getItemsForRecord(recordId: Long): Flow<List<ExaminationItem>> =
         db.itemDao().getByRecordId(recordId)
 
