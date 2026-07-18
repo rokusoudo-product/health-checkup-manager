@@ -174,7 +174,8 @@ class OcrResultFragment : Fragment() {
                                 Toast.LENGTH_SHORT
                             ).show()
                             viewModel.resetState()
-                            findNavController().popBackStack(R.id.mainFragment, false)
+                            // 登録完了 → S-02 ホームへ戻る（刷新001の遷移図）
+                            findNavController().popBackStack(R.id.homeFragment, false)
                         }
                         is SaveState.Error -> {
                             binding.btnSave.isEnabled = true

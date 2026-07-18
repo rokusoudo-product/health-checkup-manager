@@ -24,8 +24,30 @@
     <string name="error_low_confidence">もう少し近づけて撮影してください</string>
     <string name="error_ocr_failed">OCR処理中にエラーが発生しました</string>
 
-    <!-- Home screen (record list) -->
-    <string name="title_home">診断記録</string>
+    <!-- S-02 Home hub (刷新001) -->
+    <string name="title_home">ホーム</string>
+    <string name="btn_home_register">登録</string>
+    <string name="btn_home_graph">📈 グラフ</string>
+    <string name="btn_home_contact">お問い合わせ</string>
+    <string name="menu_record_list">診断記録一覧</string>
+
+    <!-- S-05 Register method (刷新001) -->
+    <string name="title_register_method">登録方法の選択</string>
+    <string name="label_register_method_guide">検査結果の登録方法を選んでください</string>
+    <string name="btn_register_camera">📷 カメラで読み取る</string>
+    <string name="btn_register_manual">✎ 手入力する</string>
+
+    <!-- S-03 Item list (刷新001) -->
+    <string name="title_item_list">項目一覧</string>
+
+    <!-- S-06b Manual entry (刷新001) -->
+    <string name="title_manual_entry">手入力</string>
+
+    <!-- S-07 Contact (刷新001) -->
+    <string name="title_contact">お問い合わせ</string>
+
+    <!-- Record list screen (旧ホーム) -->
+    <string name="title_record_list">診断記録一覧</string>
     <string name="btn_add_new">新規追加</string>
     <string name="msg_no_records">まだ記録がありません</string>
     <string name="msg_no_records_guide">右下の＋ボタンから健診結果を撮影・追加できます</string>
