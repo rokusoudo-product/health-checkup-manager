@@ -16,6 +16,9 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.google.mlkit.vision.common.InputImage
@@ -74,6 +77,8 @@ class CameraFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         cameraExecutor = Executors.newSingleThreadExecutor()
 
+        applyBottomControlsInsets()
+
         // パーミッション確認
         if (hasCameraPermission()) {
             startCamera()
@@ -92,6 +97,19 @@ class CameraFragment : Fragment() {
         }
 
         updateCapturedCountUI()
+    }
+
+    /**
+     * targetSdk 35 の edge-to-edge 強制によりシャッター・OCR開始ボタンがナビゲーションバーに
+     * 被るため、ナビゲーションバー分を bottom padding に加算する。
+     */
+    private fun applyBottomControlsInsets() {
+        val initialBottomPadding = binding.bottomControls.paddingBottom
+        ViewCompat.setOnApplyWindowInsetsListener(binding.bottomControls) { view, insets ->
+            val navBarInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            view.updatePadding(bottom = initialBottomPadding + navBarInsets.bottom)
+            insets
+        }
     }
 
     private fun hasCameraPermission(): Boolean =

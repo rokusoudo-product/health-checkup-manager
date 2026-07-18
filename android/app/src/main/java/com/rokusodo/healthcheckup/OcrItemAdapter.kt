@@ -67,6 +67,12 @@ class OcrItemAdapter(
 
     override fun getItemCount(): Int = items.size
 
+    /** ⊕項目追加（刷新001 S-06a）: 空行を末尾に追加し、不足項目を手入力できるようにする。 */
+    fun addItem() {
+        items.add(OcrItem("", "", ""))
+        notifyItemInserted(items.size - 1)
+    }
+
     /** 編集済み内容を含む全アイテムを返す。TextWatcher により items は常に最新状態。 */
     fun getItems(): List<OcrItem> = items.toList()
 }

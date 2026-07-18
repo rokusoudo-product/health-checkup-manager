@@ -1,72 +1,74 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingHorizontal="16dp"
-    android:paddingVertical="12dp">
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="6dp"
+    app:cardBackgroundColor="?attr/colorSurface"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="1dp">
 
-    <!-- 項目名 -->
-    <TextView
-        android:id="@+id/tv_master_item_name"
-        android:layout_width="0dp"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="15sp"
-        android:textStyle="bold"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/btn_master_edit"
-        tools:text="血圧（収縮期）" />
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="14dp">
 
-    <!-- 単位 -->
-    <TextView
-        android:id="@+id/tv_master_unit"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:textSize="13sp"
-        android:textColor="?android:attr/textColorSecondary"
-        android:layout_marginTop="4dp"
-        app:layout_constraintTop_toBottomOf="@id/tv_master_item_name"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/btn_master_edit"
-        tools:text="mmHg" />
+        <!-- カテゴリアイコン（血液/体格/血圧などで意味付け） -->
+        <ImageView
+            android:id="@+id/iv_master_icon"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:contentDescription="@null"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            tools:src="@drawable/ic_cat_bp" />
 
-    <!-- 基準値最小 -->
-    <TextView
-        android:id="@+id/tv_master_ref_min"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="13sp"
-        android:layout_marginTop="4dp"
-        app:layout_constraintTop_toBottomOf="@id/tv_master_unit"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        tools:text="下限: 90.0" />
+        <!-- 項目名 -->
+        <TextView
+            android:id="@+id/tv_master_item_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginStart="12dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toEndOf="@id/iv_master_icon"
+            app:layout_constraintEnd_toStartOf="@id/btn_master_edit"
+            tools:text="血圧（収縮期）" />
 
-    <!-- 基準値最大 -->
-    <TextView
-        android:id="@+id/tv_master_ref_max"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="13sp"
-        android:layout_marginTop="4dp"
-        android:layout_marginStart="16dp"
-        app:layout_constraintTop_toBottomOf="@id/tv_master_unit"
-        app:layout_constraintStart_toEndOf="@id/tv_master_ref_min"
-        app:layout_constraintBottom_toBottomOf="parent"
-        tools:text="上限: 130.0" />
+        <!-- 基準値（単位込みの統一フォーマット） -->
+        <TextView
+            android:id="@+id/tv_master_reference"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textColor="?android:attr/textColorSecondary"
+            android:textSize="14sp"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="4dp"
+            app:layout_constraintTop_toBottomOf="@id/tv_master_item_name"
+            app:layout_constraintStart_toEndOf="@id/iv_master_icon"
+            app:layout_constraintEnd_toStartOf="@id/btn_master_edit"
+            tools:text="基準値 90.0〜130.0 mmHg" />
 
-    <!-- 編集ボタン -->
-    <Button
-        android:id="@+id/btn_master_edit"
-        style="@style/Widget.Material3.Button.TextButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/btn_edit"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        <!-- 編集ボタン（タップ領域 48dp 以上を確保） -->
+        <Button
+            android:id="@+id/btn_master_edit"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="64dp"
+            android:minHeight="48dp"
+            android:text="@string/btn_edit"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

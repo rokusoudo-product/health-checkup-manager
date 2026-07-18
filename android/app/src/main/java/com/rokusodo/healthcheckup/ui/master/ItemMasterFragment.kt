@@ -6,6 +6,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -65,6 +67,23 @@ class ItemMasterFragment : Fragment() {
     private fun setupFab() {
         binding.fabAddMaster.setOnClickListener {
             showEditDialog(null)
+        }
+        applyFabInsets()
+    }
+
+    /**
+     * targetSdk 35 の edge-to-edge 強制によりFABがナビゲーションバーに被るため、
+     * ナビゲーションバー分をボトムマージンに加算する。
+     */
+    private fun applyFabInsets() {
+        val initialMarginBottom =
+            (binding.fabAddMaster.layoutParams as ViewGroup.MarginLayoutParams).bottomMargin
+        ViewCompat.setOnApplyWindowInsetsListener(binding.fabAddMaster) { view, insets ->
+            val navBarInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            val params = view.layoutParams as ViewGroup.MarginLayoutParams
+            params.bottomMargin = initialMarginBottom + navBarInsets.bottom
+            view.layoutParams = params
+            insets
         }
     }
 

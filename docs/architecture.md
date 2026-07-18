@@ -40,8 +40,49 @@
 |---------|------|---------|
 | Phase 1 (完了) | Android: カメラOCR→手動補正→Room保存→グラフ・通知 | 4/4 完了 |
 | Phase 2 (完了) | Android: Firebase Auth Google SSO・UIブラッシュアップ | 4/4 完了 |
-| Phase 3 | Android: Firestore同期追加（Room→Firestoreへの書き込み） | TBD |
-| Phase 4 | Web: Firebase Hosting + React + Firestore（手動入力・閲覧） | TBD |
+| Phase 3 (完了) | Android: Firestore同期追加（Room→Firestoreへの書き込み） | 完了 |
+| Phase 4 (完了) | Web: Firebase Hosting + React + Firestore（手動入力・閲覧） | 完了 |
+| Phase 5 | Android: 画面遷移・画面仕様刷新（S-01〜S-07。`specs/001-screen-flow-renewal/`） | 2026-07 進行中 |
+
+### 環境構成図（2026-07-18 更新）
+
+```mermaid
+flowchart TB
+    subgraph User["ユーザー"]
+        U1["📱 Android ユーザー"]
+        U2["💻 Web ユーザー（閲覧・手入力）"]
+    end
+
+    subgraph AndroidApp["Android アプリ（Kotlin / Fragment + Navigation + MVVM）"]
+        CAM["CameraX（撮影）"]
+        OCR["ML Kit Text Recognition v2（オフラインOCR）"]
+        UI["画面群 S-01〜S-07\n＋既存4画面（記録一覧/詳細/基準値外/項目マスター）"]
+        ROOM[("Room DB v2\nexamination_records\nexamination_items\nitem_masters")]
+        REPO["HealthRepository / FirestoreRepository"]
+        CAM --> OCR --> UI
+        UI <--> REPO <--> ROOM
+    end
+
+    subgraph Web["Web アプリ（React + TypeScript + Vite）"]
+        WUI["記録一覧 / 詳細 / 手入力 / 項目マスター"]
+    end
+
+    subgraph Firebase["Firebase（GCP）"]
+        AUTH["Firebase Auth\n（Google SSO）"]
+        FS[("Cloud Firestore\nusers/{uid}/records\nusers/{uid}/itemMasters")]
+        HOST["Firebase Hosting（Web配信）"]
+    end
+
+    MAIL["📧 端末メールアプリ\n（S-07 mailto → info@〜）"]
+
+    U1 --> AndroidApp
+    U2 --> HOST --> WUI
+    UI -->|認証| AUTH
+    WUI -->|認証| AUTH
+    REPO -->|同期（保存時 push / 初回ログイン時 pull）| FS
+    WUI <--> FS
+    UI -->|ACTION_SENDTO| MAIL
+```
 
 ---
 
@@ -148,8 +189,13 @@ ItemMaster（項目マスター）
 ├── itemName: String (PK)
 ├── unit: String
 ├── referenceMin: Double?
-└── referenceMax: Double?
+├── referenceMax: Double?
+├── category: String（カテゴリ。2026-07-18 刷新001で追加）
+├── isFavorite: Boolean（お気に入り。同上）
+└── favoritedAt: Long?（お気に入り登録日時＝並び順。同上）
 ```
+
+> Room スキーマ v2 への Migration とマスタシード定義は `specs/001-screen-flow-renewal/data-model.md` を参照。
 
 ### Firestoreデータモデル
 
@@ -169,7 +215,10 @@ users/{uid}/
   └── itemMasters/{itemName}/
         ├── unit: String
         ├── referenceMin: Number?
-        └── referenceMax: Number?
+        ├── referenceMax: Number?
+        ├── category: String?（欠損時 "その他"）
+        ├── isFavorite: Boolean?（欠損時 false）
+        └── favoritedAt: Number?
 ```
 
 - `records` は Android（OCR/手動）・Web（手動）の両方から書き込み
@@ -187,7 +236,11 @@ users/{uid}/
 
 ---
 
-## 4. 画面設計（MVP スコープ）
+## 4. 画面設計
+
+> **2026-07-18 以降の正:** 画面一覧・遷移図・画面仕様は `specs/001-screen-flow-renewal/spec.md`（正本は Obsidian 側仕様書 v0.2）。以下は MVP 当時の記録として残す。
+
+### （旧）MVP スコープ時点の画面設計
 
 ```
 [ホーム画面]

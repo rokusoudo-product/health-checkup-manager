@@ -43,4 +43,10 @@ interface ExaminationItemDao {
      */
     @Query("SELECT * FROM examination_items WHERE recordId = :recordId ORDER BY id ASC")
     suspend fun getByRecordIdOnce(recordId: Long): List<ExaminationItem>
+
+    /**
+     * 記録ごとの基準値外項目数を取得（診断記録一覧の状態バッジ用）
+     */
+    @Query("SELECT recordId, COUNT(*) as count FROM examination_items WHERE isAbnormal = 1 GROUP BY recordId")
+    fun getAbnormalCountsByRecord(): Flow<List<RecordAbnormalCount>>
 }

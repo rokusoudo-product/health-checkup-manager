@@ -5,6 +5,7 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.rokusodo.healthcheckup.data.db.entity.ExaminationItem
 import com.rokusodo.healthcheckup.data.db.entity.ExaminationRecord
+import com.rokusodo.healthcheckup.data.db.entity.ItemCategories
 import com.rokusodo.healthcheckup.data.db.entity.ItemMaster
 import kotlinx.coroutines.tasks.await
 
@@ -57,7 +58,10 @@ class FirestoreRepository {
             mapOf(
                 "unit" to master.unit,
                 "referenceMin" to master.referenceMin,
-                "referenceMax" to master.referenceMax
+                "referenceMax" to master.referenceMax,
+                "category" to master.category,
+                "isFavorite" to master.isFavorite,
+                "favoritedAt" to master.favoritedAt
             )
         ).await()
     }
@@ -102,7 +106,11 @@ class FirestoreRepository {
                 itemName = doc.id,
                 unit = doc.getString("unit") ?: "",
                 referenceMin = (doc.get("referenceMin") as? Number)?.toDouble(),
-                referenceMax = (doc.get("referenceMax") as? Number)?.toDouble()
+                referenceMax = (doc.get("referenceMax") as? Number)?.toDouble(),
+                // 刷新001以前のドキュメントにはフィールドが無いためデフォルトで補完（後方互換）
+                category = doc.getString("category") ?: ItemCategories.OTHER,
+                isFavorite = doc.getBoolean("isFavorite") ?: false,
+                favoritedAt = doc.getLong("favoritedAt")
             )
         }
     }

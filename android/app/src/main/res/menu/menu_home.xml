@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- S-02 ホームのオーバーフローメニュー（決定Q7: 既存4画面の導線を維持） -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_record_list"
+        android:title="@string/menu_record_list"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_item_master"
+        android:title="@string/menu_item_master"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_abnormal_list"
+        android:title="@string/menu_abnormal_list"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_sign_out"
+        android:title="@string/menu_sign_out"
+        app:showAsAction="never" />
+
+</menu>

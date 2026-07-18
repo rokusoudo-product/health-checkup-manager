@@ -18,6 +18,36 @@
         android:paddingBottom="8dp"
         tools:text="血圧（収縮期）(mmHg)" />
 
+    <!-- 最新値（刷新001 S-04） -->
+    <TextView
+        android:id="@+id/tv_latest_value"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingBottom="8dp"
+        android:textSize="16sp"
+        android:visibility="gone"
+        tools:text="最新値: 22.0 kg/m2（2026-06-01）" />
+
+    <!-- 期間切替タブ 1年/全期間（刷新001 S-04・決定Q3） -->
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tab_period"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp">
+
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/tab_one_year" />
+
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/tab_all" />
+
+    </com.google.android.material.tabs.TabLayout>
+
     <!-- データなし表示 -->
     <TextView
         android:id="@+id/tv_no_data"

@@ -42,6 +42,12 @@ android {
     buildFeatures {
         viewBinding = true
     }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -88,4 +94,13 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     // Coroutines support for Google Play Services / ML Kit Tasks
     implementation(libs.kotlinx.coroutines.play.services)
+
+    // Unit tests (JVM / Robolectric)
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core.ktx)
+    testImplementation(libs.androidx.test.junit.ktx)
+    testImplementation(libs.room.testing)
+    testImplementation(libs.navigation.testing)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

@@ -7,20 +7,46 @@
     android:layout_height="match_parent"
     tools:context=".MainFragment">
 
-    <!-- 空状態のメッセージ -->
-    <TextView
-        android:id="@+id/tv_empty_message"
+    <!-- 空状態（エンプティステート）: アイコン＋ガイド文言 -->
+    <LinearLayout
+        android:id="@+id/empty_state"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/msg_no_records"
-        android:textSize="16sp"
-        android:textColor="?android:attr/textColorSecondary"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:paddingHorizontal="32dp"
         android:visibility="gone"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        tools:visibility="visible" />
+        tools:visibility="visible">
+
+        <ImageView
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_empty_records" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/msg_no_records"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="@string/msg_no_records_guide"
+            android:textColor="?android:attr/textColorSecondary"
+            android:textSize="14sp" />
+
+    </LinearLayout>
 
     <!-- 診断記録一覧 -->
     <androidx.recyclerview.widget.RecyclerView

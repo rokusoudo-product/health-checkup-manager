@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 刷新001: ダークテーマ用カテゴリカラー（DESIGN.md のダーク列） -->
+<resources>
+    <color name="category_body">#FF4DB6AC</color>
+    <color name="category_blood_pressure">#FFEF9A9A</color>
+    <color name="category_blood">#FFF48FB1</color>
+    <color name="category_lipid">#FFFFB74D</color>
+    <color name="category_liver">#FF81C784</color>
+    <color name="category_kidney">#FF64B5F6</color>
+    <color name="category_glucose">#FFCE93D8</color>
+    <color name="category_urine">#FFFFF176</color>
+    <color name="category_other">#FFB0BEC5</color>
+
+    <color name="favorite_on">#FFEF5350</color>
+    <color name="favorite_off">#FF757575</color>
+</resources>

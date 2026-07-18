@@ -116,7 +116,7 @@ class LoginFragment : Fragment() {
                         }
                         is LoginViewModel.LoginState.Success -> {
                             binding.progressBar.visibility = View.GONE
-                            findNavController().navigate(R.id.action_login_to_main)
+                            findNavController().navigate(R.id.action_login_to_home)
                         }
                         is LoginViewModel.LoginState.Error -> {
                             binding.progressBar.visibility = View.GONE

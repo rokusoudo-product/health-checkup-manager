@@ -15,6 +15,7 @@ import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.formatter.ValueFormatter
+import com.google.android.material.tabs.TabLayout
 import com.rokusodo.healthcheckup.HealthCheckupApp
 import com.rokusodo.healthcheckup.R
 import com.rokusodo.healthcheckup.data.db.dao.ItemTrend
@@ -51,7 +52,24 @@ class TrendGraphFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        setupPeriodTabs()
         observeTrends()
+        observeLatest()
+    }
+
+    /** 期間切替タブ（1年/全期間、決定Q3）。初期表示はデータが必ず見える全期間 */
+    private fun setupPeriodTabs() {
+        binding.tabPeriod.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab) {
+                viewModel.setPeriod(
+                    if (tab.position == 0) TrendPeriod.ONE_YEAR else TrendPeriod.ALL
+                )
+            }
+
+            override fun onTabUnselected(tab: TabLayout.Tab) = Unit
+            override fun onTabReselected(tab: TabLayout.Tab) = Unit
+        })
+        binding.tabPeriod.getTabAt(1)?.select()
     }
 
     private fun observeTrends() {
@@ -59,6 +77,28 @@ class TrendGraphFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.trends.collect { trends ->
                     renderGraph(trends)
+                }
+            }
+        }
+    }
+
+    /** 最新値の表示（期間によらず全データの最新。刷新001 S-04） */
+    private fun observeLatest() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.latest.collect { latest ->
+                    if (latest == null) {
+                        binding.tvLatestValue.visibility = View.GONE
+                    } else {
+                        val valueWithUnit = if (latest.unit.isNotBlank()) {
+                            "${latest.value} ${latest.unit}"
+                        } else {
+                            latest.value
+                        }
+                        binding.tvLatestValue.text =
+                            getString(R.string.label_latest_value, valueWithUnit, latest.recordDate)
+                        binding.tvLatestValue.visibility = View.VISIBLE
+                    }
                 }
             }
         }

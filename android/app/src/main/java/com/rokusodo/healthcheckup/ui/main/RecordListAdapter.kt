@@ -4,7 +4,9 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
+import com.rokusodo.healthcheckup.R
 import com.rokusodo.healthcheckup.data.db.entity.ExaminationRecord
 import com.rokusodo.healthcheckup.databinding.ItemRecordBinding
 
@@ -25,13 +27,21 @@ class RecordListAdapter(
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(item: RecordWithAbnormalCount) {
+            val context = binding.root.context
             binding.tvRecordDate.text = item.record.date
-            binding.tvRecordFacility.text = item.record.facility.ifBlank { "-" }
+            binding.tvRecordFacility.text = item.record.facility.ifBlank { "（医療機関名なし）" }
+
+            // 状態バッジ: 基準値外があれば「要注意 N件」（警告色）、なければ「異常なし」（正常色）
+            val badge = binding.tvAbnormalBadge
+            badge.visibility = android.view.View.VISIBLE
             if (item.abnormalCount > 0) {
-                binding.tvAbnormalBadge.text = item.abnormalCount.toString()
-                binding.tvAbnormalBadge.visibility = android.view.View.VISIBLE
+                badge.text = context.getString(R.string.badge_warning, item.abnormalCount)
+                badge.setBackgroundResource(R.drawable.bg_abnormal_badge)
+                badge.setTextColor(ContextCompat.getColor(context, R.color.status_warning_on))
             } else {
-                binding.tvAbnormalBadge.visibility = android.view.View.GONE
+                badge.text = context.getString(R.string.badge_normal)
+                badge.setBackgroundResource(R.drawable.bg_normal_badge)
+                badge.setTextColor(ContextCompat.getColor(context, R.color.status_normal))
             }
             binding.root.setOnClickListener { onItemClick(item.record) }
         }

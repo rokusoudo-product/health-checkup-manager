@@ -2,12 +2,10 @@ package com.rokusodo.healthcheckup
 
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.view.MenuProvider
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -15,17 +13,15 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.firebase.auth.FirebaseAuth
 import com.rokusodo.healthcheckup.databinding.FragmentMainBinding
 import com.rokusodo.healthcheckup.ui.main.MainViewModel
 import com.rokusodo.healthcheckup.ui.main.RecordListAdapter
 import kotlinx.coroutines.launch
 
 /**
- * ホーム画面（診断記録一覧）フラグメント。
- * ExaminationRecord 一覧を RecyclerView で表示する。
+ * 診断記録一覧フラグメント（旧ホーム）。
+ * 刷新001以降は S-02 ホームのメニューから遷移する（決定Q7）。
+ * メニュー（項目マスター・基準値外一覧・ログアウト）はホーム側に移設済み。
  */
 class MainFragment : Fragment() {
 
@@ -53,7 +49,6 @@ class MainFragment : Fragment() {
 
         setupRecyclerView()
         setupFab()
-        setupMenu()
         observeRecords()
     }
 
@@ -70,62 +65,37 @@ class MainFragment : Fragment() {
 
     private fun setupFab() {
         binding.fabAdd.setOnClickListener {
-            findNavController().navigate(R.id.action_main_to_camera)
+            // 刷新001: 登録方法選択（S-05）を経由して登録する
+            findNavController().navigate(R.id.action_main_to_register_method)
         }
+        applyFabInsets()
     }
 
-    private fun setupMenu() {
-        requireActivity().addMenuProvider(object : MenuProvider {
-            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-                menuInflater.inflate(R.menu.menu_main, menu)
-            }
-
-            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
-                return when (menuItem.itemId) {
-                    R.id.action_item_master -> {
-                        findNavController().navigate(R.id.action_main_to_item_master)
-                        true
-                    }
-                    R.id.action_abnormal_list -> {
-                        findNavController().navigate(R.id.action_main_to_abnormal_list)
-                        true
-                    }
-                    R.id.action_sign_out -> {
-                        signOut()
-                        true
-                    }
-                    else -> false
-                }
-            }
-        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
-    }
-
-    private fun signOut() {
-        // Firebase Auth からサインアウト
-        FirebaseAuth.getInstance().signOut()
-        // Google Sign-In のキャッシュもクリア
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).build()
-        GoogleSignIn.getClient(requireActivity(), gso).signOut()
-        // ログイン画面へ遷移（バックスタックを消去）
-        findNavController().navigate(R.id.action_main_to_login)
+    /**
+     * targetSdk 35 の edge-to-edge 強制によりFABがナビゲーションバーに被るため、
+     * ナビゲーションバー分をボトムマージンに加算する。
+     */
+    private fun applyFabInsets() {
+        val initialMarginBottom = (binding.fabAdd.layoutParams as ViewGroup.MarginLayoutParams).bottomMargin
+        ViewCompat.setOnApplyWindowInsetsListener(binding.fabAdd) { view, insets ->
+            val navBarInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            val params = view.layoutParams as ViewGroup.MarginLayoutParams
+            params.bottomMargin = initialMarginBottom + navBarInsets.bottom
+            view.layoutParams = params
+            insets
+        }
     }
 
     private fun observeRecords() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.records.collect { records ->
-                    if (records.isEmpty()) {
-                        binding.tvEmptyMessage.visibility = View.VISIBLE
+                viewModel.records.collect { items ->
+                    if (items.isEmpty()) {
+                        binding.emptyState.visibility = View.VISIBLE
                         binding.recyclerRecords.visibility = View.GONE
                     } else {
-                        binding.tvEmptyMessage.visibility = View.GONE
+                        binding.emptyState.visibility = View.GONE
                         binding.recyclerRecords.visibility = View.VISIBLE
-                        val items = records.map { record ->
-                            RecordListAdapter.RecordWithAbnormalCount(
-                                record = record,
-                                abnormalCount = 0 // 詳細なカウントは別途Flow取得が必要なため0で初期化
-                            )
-                        }
                         recordListAdapter.submitList(items)
                     }
                 }

@@ -1,54 +1,80 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 画面遷移刷新001（specs/001-screen-flow-renewal/spec.md の遷移図に準拠） -->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/mainFragment">
+    app:startDestination="@id/homeFragment">
 
-    <!-- ログイン画面 -->
+    <!-- S-01 ログイン -->
     <fragment
         android:id="@+id/loginFragment"
         android:name="com.rokusodo.healthcheckup.ui.auth.LoginFragment"
         android:label="@string/title_login"
         tools:layout="@layout/fragment_login">
         <action
-            android:id="@+id/action_login_to_main"
-            app:destination="@id/mainFragment"
+            android:id="@+id/action_login_to_home"
+            app:destination="@id/homeFragment"
             app:popUpTo="@id/loginFragment"
             app:popUpToInclusive="true" />
     </fragment>
 
-    <!-- ホーム画面（診断記録一覧） -->
+    <!-- S-02 ホーム（登録 / グラフ / お問い合わせ の分岐ハブ） -->
     <fragment
-        android:id="@+id/mainFragment"
-        android:name="com.rokusodo.healthcheckup.MainFragment"
+        android:id="@+id/homeFragment"
+        android:name="com.rokusodo.healthcheckup.ui.home.HomeFragment"
         android:label="@string/title_home"
-        tools:layout="@layout/fragment_main">
+        tools:layout="@layout/fragment_home">
 
         <action
-            android:id="@+id/action_main_to_camera"
-            app:destination="@id/cameraFragment" />
+            android:id="@+id/action_home_to_register_method"
+            app:destination="@id/registerMethodFragment" />
 
         <action
-            android:id="@+id/action_main_to_record_detail"
-            app:destination="@id/recordDetailFragment" />
+            android:id="@+id/action_home_to_item_list"
+            app:destination="@id/itemListFragment" />
 
         <action
-            android:id="@+id/action_main_to_item_master"
+            android:id="@+id/action_home_to_contact"
+            app:destination="@id/contactFragment" />
+
+        <!-- 既存4画面の導線（決定Q7: メニューから遷移） -->
+        <action
+            android:id="@+id/action_home_to_record_list"
+            app:destination="@id/mainFragment" />
+
+        <action
+            android:id="@+id/action_home_to_item_master"
             app:destination="@id/itemMasterFragment" />
 
         <action
-            android:id="@+id/action_main_to_abnormal_list"
+            android:id="@+id/action_home_to_abnormal_list"
             app:destination="@id/abnormalListFragment" />
 
         <action
-            android:id="@+id/action_main_to_login"
+            android:id="@+id/action_home_to_login"
             app:destination="@id/loginFragment"
-            app:popUpTo="@id/mainFragment"
+            app:popUpTo="@id/homeFragment"
             app:popUpToInclusive="true" />
     </fragment>
 
-    <!-- 撮影画面 -->
+    <!-- S-05 登録方法選択 -->
+    <fragment
+        android:id="@+id/registerMethodFragment"
+        android:name="com.rokusodo.healthcheckup.ui.register.RegisterMethodFragment"
+        android:label="@string/title_register_method"
+        tools:layout="@layout/fragment_register_method">
+
+        <action
+            android:id="@+id/action_register_method_to_camera"
+            app:destination="@id/cameraFragment" />
+
+        <action
+            android:id="@+id/action_register_method_to_manual_entry"
+            app:destination="@id/manualEntryFragment" />
+    </fragment>
+
+    <!-- S-06a 撮影 -->
     <fragment
         android:id="@+id/cameraFragment"
         android:name="com.rokusodo.healthcheckup.CameraFragment"
@@ -60,7 +86,7 @@
             app:destination="@id/ocrResultFragment" />
     </fragment>
 
-    <!-- OCR確認・補正画面 -->
+    <!-- S-06a OCR確認・補正（登録完了時はコードで popBackStack(homeFragment) しホームへ戻る） -->
     <fragment
         android:id="@+id/ocrResultFragment"
         android:name="com.rokusodo.healthcheckup.OcrResultFragment"
@@ -74,7 +100,49 @@
             android:defaultValue="" />
     </fragment>
 
-    <!-- 診断記録詳細画面 -->
+    <!-- S-06b 手入力フォーム（登録完了時はコードで popBackStack(homeFragment) しホームへ戻る） -->
+    <fragment
+        android:id="@+id/manualEntryFragment"
+        android:name="com.rokusodo.healthcheckup.ui.manualentry.ManualEntryFragment"
+        android:label="@string/title_manual_entry"
+        tools:layout="@layout/fragment_manual_entry" />
+
+    <!-- S-03 項目一覧（お気に入り管理） -->
+    <fragment
+        android:id="@+id/itemListFragment"
+        android:name="com.rokusodo.healthcheckup.ui.itemlist.ItemListFragment"
+        android:label="@string/title_item_list"
+        tools:layout="@layout/fragment_item_list">
+
+        <action
+            android:id="@+id/action_item_list_to_trend_graph"
+            app:destination="@id/trendGraphFragment" />
+    </fragment>
+
+    <!-- S-07 お問い合わせ -->
+    <fragment
+        android:id="@+id/contactFragment"
+        android:name="com.rokusodo.healthcheckup.ui.contact.ContactFragment"
+        android:label="@string/title_contact"
+        tools:layout="@layout/fragment_contact" />
+
+    <!-- 既存: 診断記録一覧（ホームのメニューから遷移） -->
+    <fragment
+        android:id="@+id/mainFragment"
+        android:name="com.rokusodo.healthcheckup.MainFragment"
+        android:label="@string/title_record_list"
+        tools:layout="@layout/fragment_main">
+
+        <action
+            android:id="@+id/action_main_to_record_detail"
+            app:destination="@id/recordDetailFragment" />
+
+        <action
+            android:id="@+id/action_main_to_register_method"
+            app:destination="@id/registerMethodFragment" />
+    </fragment>
+
+    <!-- 既存: 診断記録詳細 -->
     <fragment
         android:id="@+id/recordDetailFragment"
         android:name="com.rokusodo.healthcheckup.ui.detail.RecordDetailFragment"
@@ -90,14 +158,14 @@
             app:destination="@id/trendGraphFragment" />
     </fragment>
 
-    <!-- 項目マスター管理画面 -->
+    <!-- 既存: 項目マスター管理 -->
     <fragment
         android:id="@+id/itemMasterFragment"
         android:name="com.rokusodo.healthcheckup.ui.master.ItemMasterFragment"
         android:label="@string/title_item_master"
         tools:layout="@layout/fragment_item_master" />
 
-    <!-- 経年グラフ画面 -->
+    <!-- S-04 経年グラフ -->
     <fragment
         android:id="@+id/trendGraphFragment"
         android:name="com.rokusodo.healthcheckup.ui.graph.TrendGraphFragment"
@@ -106,7 +174,7 @@
         <argument android:name="itemName" app:argType="string" />
     </fragment>
 
-    <!-- 基準値外一覧画面 -->
+    <!-- 既存: 基準値外一覧 -->
     <fragment
         android:id="@+id/abnormalListFragment"
         android:name="com.rokusodo.healthcheckup.ui.notification.AbnormalListFragment"
