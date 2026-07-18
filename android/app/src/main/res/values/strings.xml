@@ -73,6 +73,16 @@
     <string name="title_trend_graph">経年グラフ</string>
     <string name="label_no_graph_data">グラフを表示できません</string>
 
+    <!-- S-04 期間切替・最新値 (刷新001) -->
+    <string name="tab_one_year">1年</string>
+    <string name="tab_all">全期間</string>
+    <string name="label_latest_value">最新値: %1$s（%2$s）</string>
+
+    <!-- S-03 お気に入り (刷新001) -->
+    <string name="favorite_on_mark">♥</string>
+    <string name="favorite_off_mark">♡</string>
+    <string name="cd_favorite_toggle">お気に入りを切り替える</string>
+
     <!-- Sprint 3: Abnormal list screen -->
     <string name="title_abnormal_list">基準値外一覧</string>
     <string name="menu_abnormal_list">基準値外一覧</string>

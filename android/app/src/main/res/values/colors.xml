@@ -30,4 +30,19 @@
     <color name="status_normal_bg">#FFE6F4EA</color>      <!-- 正常バッジ背景 -->
     <color name="status_warning">#FFC62828</color>        <!-- 要注意/異常バッジ背景（赤） -->
     <color name="status_warning_on">#FFFFFFFF</color>     <!-- 要注意/異常バッジ文字 -->
+
+    <!-- 刷新001: カテゴリカラー（DESIGN.md のトークン。文字・枠のみに使用、背景には使わない） -->
+    <color name="category_body">#FF00796B</color>
+    <color name="category_blood_pressure">#FFC62828</color>
+    <color name="category_blood">#FFAD1457</color>
+    <color name="category_lipid">#FFEF6C00</color>
+    <color name="category_liver">#FF2E7D32</color>
+    <color name="category_kidney">#FF1565C0</color>
+    <color name="category_glucose">#FF6A1B9A</color>
+    <color name="category_urine">#FFF9A825</color>
+    <color name="category_other">#FF546E7A</color>
+
+    <!-- 刷新001: お気に入り♥（DESIGN.md favorite トークン） -->
+    <color name="favorite_on">#FFD32F2F</color>
+    <color name="favorite_off">#FF9E9E9E</color>
 </resources>
