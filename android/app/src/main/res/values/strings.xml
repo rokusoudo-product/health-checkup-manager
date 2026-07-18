@@ -49,6 +49,16 @@
 
     <!-- S-07 Contact (刷新001) -->
     <string name="title_contact">お問い合わせ</string>
+    <!-- TODO: 実運用のサポート窓口アドレスを代表確認のうえ差し替える（決定Q9: mailto方式） -->
+    <string name="contact_email" translatable="false">info@example.com</string>
+    <string name="label_contact_info">ご意見・不具合のご報告は下記フォームからお送りください。\n「送信」でメールアプリが起動します。</string>
+    <string name="hint_contact_name">お名前</string>
+    <string name="hint_contact_body">お問い合わせ内容</string>
+    <string name="btn_send">送信</string>
+    <string name="contact_mail_subject">健康診断マネージャー お問い合わせ</string>
+    <string name="contact_mail_body">お名前: %1$s\n\nお問い合わせ内容:\n%2$s</string>
+    <string name="msg_no_mailer">メールアプリが見つかりません。%1$s 宛にご連絡ください</string>
+    <string name="msg_contact_body_required">お問い合わせ内容を入力してください</string>
 
     <!-- Record list screen (旧ホーム) -->
     <string name="title_record_list">診断記録一覧</string>

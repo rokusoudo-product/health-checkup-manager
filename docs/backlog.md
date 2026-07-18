@@ -116,6 +116,20 @@
 | T-504 | 手動入力フォーム（検査日・施設名・項目追加） | engineer | ✅ 完了 |
 | T-505 | 項目マスター管理（基準値設定） | engineer | ✅ 完了 |
 
+### Sprint 8（2026-07-18〜）: 画面遷移・画面仕様刷新（specs/001-screen-flow-renewal/）
+
+| チケット | タスク | 担当 | ステータス |
+|---------|--------|------|-----------|
+| T-701 | ドキュメント整備（specs/DESIGN.md/構成図/README/CLAUDE.md） | engineer | ✅ 完了 |
+| T-702 | テスト基盤+リグレッションテスト（OcrParser/DAO/nav_graph/CI） | engineer | ✅ 完了 |
+| T-703 | ItemMaster拡張（category/isFavorite）+ Room v2 Migration + マスタ25項目 | engineer | ✅ 完了 |
+| T-704 | 画面遷移刷新（S-02ホームハブ・S-05登録方法選択・nav_graph） | engineer | ✅ 完了 |
+| T-705 | S-03項目一覧（カテゴリ色・お気に入り）/ S-04期間タブ・最新値 | engineer | ✅ 完了 |
+| T-706 | S-06b手入力（BMI自動計算）/ S-06a ⊕項目追加 | engineer | ✅ 完了 |
+| T-707 | S-07お問い合わせ（mailto） | engineer | ✅ 完了 |
+| T-708 | 実機/エミュレータ通し確認（S-01〜S-07） | zakis | 未着手 |
+| T-709 | contact_email 実アドレス設定（現在プレースホルダ） | po_agent | 未着手 |
+
 ### Sprint 7: Web版グラフ・仕上げ
 
 | チケット | タスク | 担当 | ステータス |
