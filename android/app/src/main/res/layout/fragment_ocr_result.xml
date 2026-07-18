@@ -40,12 +40,24 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
-        android:paddingBottom="80dp"
+        android:paddingBottom="16dp"
         app:layout_constraintTop_toBottomOf="@id/tv_error_message"
-        app:layout_constraintBottom_toTopOf="@id/btn_save"
+        app:layout_constraintBottom_toTopOf="@id/btn_add_item"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         tools:listitem="@layout/item_ocr_result" />
+
+    <!-- ⊕項目追加（刷新001 S-06a: 不足項目を追加可能にする） -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_add_item"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:text="@string/btn_add_item"
+        app:layout_constraintBottom_toTopOf="@id/btn_save"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Progress indicator (shown during save) -->
     <ProgressBar

@@ -42,6 +42,10 @@
 
     <!-- S-06b Manual entry (刷新001) -->
     <string name="title_manual_entry">手入力</string>
+    <string name="btn_add_item">⊕ 項目を追加</string>
+    <string name="btn_submit_entry">登録する</string>
+    <string name="dialog_title_add_item">項目を追加</string>
+    <string name="msg_no_entry_values">値が入力されていません</string>
 
     <!-- S-07 Contact (刷新001) -->
     <string name="title_contact">お問い合わせ</string>

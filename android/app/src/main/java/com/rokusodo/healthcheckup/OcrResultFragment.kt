@@ -120,6 +120,11 @@ class OcrResultFragment : Fragment() {
         binding.btnSave.setOnClickListener {
             showDatePickerDialog()
         }
+        // ⊕項目追加（刷新001 S-06a）
+        binding.btnAddItem.setOnClickListener {
+            ocrItemAdapter.addItem()
+            binding.recyclerOcrItems.scrollToPosition(ocrItemAdapter.itemCount - 1)
+        }
     }
 
     private fun showDatePickerDialog() {
