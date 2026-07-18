@@ -1,0 +1,50 @@
+name: Android Unit Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  unit-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v3
+
+      # google-services.json は秘匿のため未コミット。単体テスト用にダミーを生成する
+      - name: Provide dummy google-services.json
+        run: |
+          if [ ! -f android/app/google-services.json ]; then
+            cat > android/app/google-services.json <<'EOF'
+          {
+            "project_info": {
+              "project_number": "000000000000",
+              "project_id": "dummy-project",
+              "storage_bucket": "dummy-project.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
+                  "android_client_info": { "package_name": "com.rokusoudo.healthcheckup" }
+                },
+                "oauth_client": [],
+                "api_key": [{ "current_key": "AIzaDummyDummyDummyDummyDummyDummy000" }],
+                "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          EOF
+          fi
+
+      - name: Run unit tests
+        working-directory: android
+        run: ./gradlew testDebugUnitTest --console=plain --stacktrace
