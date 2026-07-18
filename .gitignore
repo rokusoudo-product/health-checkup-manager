@@ -44,3 +44,6 @@ web/dist/
 *.keystore
 *.jks
 signing.properties
+
+# Gradle wrapper は必須（CIで使用）
+!android/gradle/wrapper/gradle-wrapper.jar
