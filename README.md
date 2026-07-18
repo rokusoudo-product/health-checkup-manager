@@ -41,17 +41,62 @@ An Android app for managing health checkup results with OCR scanning, trend grap
    - Let Gradle sync and download the required dependencies.
    - Run the app on an emulator or a physical device.
 
+## アーキテクチャ / 構成図
+
+```mermaid
+flowchart TB
+    subgraph User["ユーザー"]
+        U1["📱 Android ユーザー"]
+        U2["💻 Web ユーザー（閲覧・手入力）"]
+    end
+
+    subgraph AndroidApp["Android アプリ（Kotlin / Fragment + Navigation + MVVM）"]
+        CAM["CameraX（撮影）"]
+        OCR["ML Kit Text Recognition v2（オフラインOCR）"]
+        UI["画面群 S-01〜S-07\n＋記録一覧/詳細/基準値外/項目マスター"]
+        ROOM[("Room DB")]
+        REPO["Repository 層"]
+        CAM --> OCR --> UI
+        UI <--> REPO <--> ROOM
+    end
+
+    subgraph Web["Web アプリ（React + TypeScript + Vite）"]
+        WUI["記録一覧 / 詳細 / 手入力 / 項目マスター"]
+    end
+
+    subgraph Firebase["Firebase（GCP）"]
+        AUTH["Firebase Auth（Google SSO）"]
+        FS[("Cloud Firestore\nusers/{uid}/…")]
+        HOST["Firebase Hosting"]
+    end
+
+    MAIL["📧 端末メールアプリ（お問い合わせ mailto）"]
+
+    U1 --> AndroidApp
+    U2 --> HOST --> WUI
+    UI -->|認証| AUTH
+    WUI -->|認証| AUTH
+    REPO -->|同期| FS
+    WUI <--> FS
+    UI -->|ACTION_SENDTO| MAIL
+```
+
+詳細は [docs/architecture.md](docs/architecture.md) を参照。
+
 ## Project Structure
 
 ```
 health-checkup-manager/
 ├── android/        # Android application (Kotlin)
-└── docs/           # Design documents and backlog
+├── web/            # Web application (React + TypeScript + Vite)
+├── specs/          # Feature specs (spec-driven development)
+├── docs/           # Design documents and backlog
+└── DESIGN.md       # UI design tokens & rules
 ```
 
 ## Development
 
-See [docs/](docs/) for architecture design and backlog.
+See [docs/](docs/) for architecture design and backlog, and [specs/001-screen-flow-renewal/](specs/001-screen-flow-renewal/) for the ongoing screen-flow renewal.
 
 ## Compliance
 
