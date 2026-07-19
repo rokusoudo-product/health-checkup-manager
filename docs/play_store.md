@@ -10,7 +10,7 @@
 
 | 項目 | 値 |
 |------|---|
-| アプリID | `com.rokusodo.healthcheckup` |
+| アプリID | `com.rokusoudo.healthcheckup` |
 | versionCode | 1 |
 | versionName | 1.0.0 |
 | minSdk | 26（Android 8.0 以上） |
