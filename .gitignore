@@ -40,6 +40,11 @@ web/.env.local
 web/node_modules/
 web/dist/
 
+# Firestore rules tests（package-lock.json は再現性のためコミットする）
+firestore-tests/node_modules/
+firestore-debug.log
+firebase-debug.log
+
 # Keys / secrets
 *.keystore
 *.jks
