@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.rokusodo.healthcheckup"
+    namespace = "com.rokusoudo.healthcheckup"
     compileSdk = 35
 
     defaultConfig {

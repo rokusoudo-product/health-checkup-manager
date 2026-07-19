@@ -9,7 +9,7 @@
     <!-- S-01 ログイン -->
     <fragment
         android:id="@+id/loginFragment"
-        android:name="com.rokusodo.healthcheckup.ui.auth.LoginFragment"
+        android:name="com.rokusoudo.healthcheckup.ui.auth.LoginFragment"
         android:label="@string/title_login"
         tools:layout="@layout/fragment_login">
         <action
@@ -22,7 +22,7 @@
     <!-- S-02 ホーム（登録 / グラフ / お問い合わせ の分岐ハブ） -->
     <fragment
         android:id="@+id/homeFragment"
-        android:name="com.rokusodo.healthcheckup.ui.home.HomeFragment"
+        android:name="com.rokusoudo.healthcheckup.ui.home.HomeFragment"
         android:label="@string/title_home"
         tools:layout="@layout/fragment_home">
 
@@ -61,7 +61,7 @@
     <!-- S-05 登録方法選択 -->
     <fragment
         android:id="@+id/registerMethodFragment"
-        android:name="com.rokusodo.healthcheckup.ui.register.RegisterMethodFragment"
+        android:name="com.rokusoudo.healthcheckup.ui.register.RegisterMethodFragment"
         android:label="@string/title_register_method"
         tools:layout="@layout/fragment_register_method">
 
@@ -77,7 +77,7 @@
     <!-- S-06a 撮影 -->
     <fragment
         android:id="@+id/cameraFragment"
-        android:name="com.rokusodo.healthcheckup.CameraFragment"
+        android:name="com.rokusoudo.healthcheckup.CameraFragment"
         android:label="撮影"
         tools:layout="@layout/fragment_camera">
 
@@ -89,7 +89,7 @@
     <!-- S-06a OCR確認・補正（登録完了時はコードで popBackStack(homeFragment) しホームへ戻る） -->
     <fragment
         android:id="@+id/ocrResultFragment"
-        android:name="com.rokusodo.healthcheckup.OcrResultFragment"
+        android:name="com.rokusoudo.healthcheckup.OcrResultFragment"
         android:label="@string/title_ocr_result"
         tools:layout="@layout/fragment_ocr_result">
 
@@ -103,14 +103,14 @@
     <!-- S-06b 手入力フォーム（登録完了時はコードで popBackStack(homeFragment) しホームへ戻る） -->
     <fragment
         android:id="@+id/manualEntryFragment"
-        android:name="com.rokusodo.healthcheckup.ui.manualentry.ManualEntryFragment"
+        android:name="com.rokusoudo.healthcheckup.ui.manualentry.ManualEntryFragment"
         android:label="@string/title_manual_entry"
         tools:layout="@layout/fragment_manual_entry" />
 
     <!-- S-03 項目一覧（お気に入り管理） -->
     <fragment
         android:id="@+id/itemListFragment"
-        android:name="com.rokusodo.healthcheckup.ui.itemlist.ItemListFragment"
+        android:name="com.rokusoudo.healthcheckup.ui.itemlist.ItemListFragment"
         android:label="@string/title_item_list"
         tools:layout="@layout/fragment_item_list">
 
@@ -122,14 +122,14 @@
     <!-- S-07 お問い合わせ -->
     <fragment
         android:id="@+id/contactFragment"
-        android:name="com.rokusodo.healthcheckup.ui.contact.ContactFragment"
+        android:name="com.rokusoudo.healthcheckup.ui.contact.ContactFragment"
         android:label="@string/title_contact"
         tools:layout="@layout/fragment_contact" />
 
     <!-- 既存: 診断記録一覧（ホームのメニューから遷移） -->
     <fragment
         android:id="@+id/mainFragment"
-        android:name="com.rokusodo.healthcheckup.MainFragment"
+        android:name="com.rokusoudo.healthcheckup.MainFragment"
         android:label="@string/title_record_list"
         tools:layout="@layout/fragment_main">
 
@@ -145,7 +145,7 @@
     <!-- 既存: 診断記録詳細 -->
     <fragment
         android:id="@+id/recordDetailFragment"
-        android:name="com.rokusodo.healthcheckup.ui.detail.RecordDetailFragment"
+        android:name="com.rokusoudo.healthcheckup.ui.detail.RecordDetailFragment"
         android:label="@string/title_record_detail"
         tools:layout="@layout/fragment_record_detail">
 
@@ -161,14 +161,14 @@
     <!-- 既存: 項目マスター管理 -->
     <fragment
         android:id="@+id/itemMasterFragment"
-        android:name="com.rokusodo.healthcheckup.ui.master.ItemMasterFragment"
+        android:name="com.rokusoudo.healthcheckup.ui.master.ItemMasterFragment"
         android:label="@string/title_item_master"
         tools:layout="@layout/fragment_item_master" />
 
     <!-- S-04 経年グラフ -->
     <fragment
         android:id="@+id/trendGraphFragment"
-        android:name="com.rokusodo.healthcheckup.ui.graph.TrendGraphFragment"
+        android:name="com.rokusoudo.healthcheckup.ui.graph.TrendGraphFragment"
         android:label="@string/title_trend_graph"
         tools:layout="@layout/fragment_trend_graph">
         <argument android:name="itemName" app:argType="string" />
@@ -177,7 +177,7 @@
     <!-- 既存: 基準値外一覧 -->
     <fragment
         android:id="@+id/abnormalListFragment"
-        android:name="com.rokusodo.healthcheckup.ui.notification.AbnormalListFragment"
+        android:name="com.rokusoudo.healthcheckup.ui.notification.AbnormalListFragment"
         android:label="@string/title_abnormal_list"
         tools:layout="@layout/fragment_abnormal_list" />
 
