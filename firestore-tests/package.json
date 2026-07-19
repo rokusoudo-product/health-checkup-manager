@@ -1,0 +1,16 @@
+{
+  "name": "health-checkup-firestore-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "firestore.rules のユニットテスト（Firebase Emulator 使用）",
+  "type": "module",
+  "scripts": {
+    "test": "node --test rules.test.mjs",
+    "test:emulator": "cd .. && firebase emulators:exec --project health-checkup-manager-rules-test --only firestore \"npm --prefix firestore-tests test\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^4.0.1",
+    "firebase": "^11.3.0",
+    "firebase-tools": "^14.0.0"
+  }
+}
