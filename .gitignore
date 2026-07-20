@@ -45,6 +45,9 @@ firestore-tests/node_modules/
 firestore-debug.log
 firebase-debug.log
 
+# 実機検証の証跡（スクリーンショット・UI dump）。ローカル保持のみ
+test_artifacts/
+
 # Keys / secrets
 *.keystore
 *.jks
