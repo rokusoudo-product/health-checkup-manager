@@ -7,6 +7,7 @@ import androidx.navigation.NavDestination
 import androidx.navigation.Navigator
 import androidx.navigation.testing.TestNavHostController
 import androidx.test.core.app.ApplicationProvider
+import com.rokusoudo.healthcheckup.MainActivity
 import com.rokusoudo.healthcheckup.R
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -48,7 +49,24 @@ class NavGraphRegressionTest {
     }
 
     @Test
-    fun `開始画面はホーム(S-02)である`() {
+    fun `未ログイン状態の開始画面はログイン(S-01)である`() {
+        val startDestinationId = MainActivity.resolveStartDestinationId(isLoggedIn = false)
+        assertEquals(R.id.loginFragment, startDestinationId)
+
+        val graph = navController.navInflater.inflate(R.navigation.nav_graph)
+        graph.setStartDestination(startDestinationId)
+        navController.setGraph(graph, null)
+        assertEquals(R.id.loginFragment, currentId())
+    }
+
+    @Test
+    fun `ログイン済み状態の開始画面はホーム(S-02)である`() {
+        val startDestinationId = MainActivity.resolveStartDestinationId(isLoggedIn = true)
+        assertEquals(R.id.homeFragment, startDestinationId)
+
+        val graph = navController.navInflater.inflate(R.navigation.nav_graph)
+        graph.setStartDestination(startDestinationId)
+        navController.setGraph(graph, null)
         assertEquals(R.id.homeFragment, currentId())
     }
 
