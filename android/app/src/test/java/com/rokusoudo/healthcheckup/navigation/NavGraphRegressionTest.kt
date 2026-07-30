@@ -48,12 +48,22 @@ class NavGraphRegressionTest {
     }
 
     @Test
-    fun `開始画面はホーム(S-02)である`() {
+    fun `開始画面はログイン(S-01)である`() {
+        // MainActivity が未ログイン時に S-01 を開始画面として選ぶための安全なデフォルト（Issue #7）。
+        // ログイン済み時の S-02 開始は MainActivity 側で動的に上書きされるため、
+        // Fragment を起動しないこの nav_graph 単体テストの対象外（手動確認・PR本文に明記）。
+        assertEquals(R.id.loginFragment, currentId())
+    }
+
+    @Test
+    fun `ログインからホームへ遷移できる`() {
+        navController.navigate(R.id.action_login_to_home)
         assertEquals(R.id.homeFragment, currentId())
     }
 
     @Test
     fun `ホームから登録方法選択を経てカメラOCRフローに入り登録完了でホームへ戻る`() {
+        moveTo(R.id.homeFragment)
         navController.navigate(R.id.action_home_to_register_method)
         assertEquals(R.id.registerMethodFragment, currentId())
         navController.navigate(R.id.action_register_method_to_camera)
@@ -67,6 +77,7 @@ class NavGraphRegressionTest {
 
     @Test
     fun `ホームから登録方法選択を経て手入力に入り登録完了でホームへ戻る`() {
+        moveTo(R.id.homeFragment)
         navController.navigate(R.id.action_home_to_register_method)
         navController.navigate(R.id.action_register_method_to_manual_entry)
         assertEquals(R.id.manualEntryFragment, currentId())
@@ -77,6 +88,7 @@ class NavGraphRegressionTest {
 
     @Test
     fun `ホームから項目一覧を経て項目グラフへ遷移できる`() {
+        moveTo(R.id.homeFragment)
         navController.navigate(R.id.action_home_to_item_list)
         assertEquals(R.id.itemListFragment, currentId())
         navController.navigate(R.id.action_item_list_to_trend_graph, bundleOf("itemName" to "BMI"))
@@ -85,12 +97,14 @@ class NavGraphRegressionTest {
 
     @Test
     fun `ホームからお問い合わせへ遷移できる`() {
+        moveTo(R.id.homeFragment)
         navController.navigate(R.id.action_home_to_contact)
         assertEquals(R.id.contactFragment, currentId())
     }
 
     @Test
     fun `メニューから記録一覧と記録詳細とグラフの既存動線が維持される`() {
+        moveTo(R.id.homeFragment)
         navController.navigate(R.id.action_home_to_record_list)
         assertEquals(R.id.mainFragment, currentId())
         navController.navigate(R.id.action_main_to_record_detail, bundleOf("recordId" to 1L))
@@ -101,6 +115,7 @@ class NavGraphRegressionTest {
 
     @Test
     fun `メニューから項目マスターと基準値外一覧へ遷移できる`() {
+        moveTo(R.id.homeFragment)
         navController.navigate(R.id.action_home_to_item_master)
         assertEquals(R.id.itemMasterFragment, currentId())
 
@@ -111,6 +126,7 @@ class NavGraphRegressionTest {
 
     @Test
     fun `記録一覧のFABから登録方法選択へ遷移できる`() {
+        moveTo(R.id.homeFragment)
         navController.navigate(R.id.action_home_to_record_list)
         navController.navigate(R.id.action_main_to_register_method)
         assertEquals(R.id.registerMethodFragment, currentId())
@@ -118,6 +134,10 @@ class NavGraphRegressionTest {
 
     @Test
     fun `ログアウトでホームが除去されログイン成功でホームのみのスタックになる`() {
+        // 開始画面（loginFragment）から実際の遷移でホームへ入り、バックスタックを1件にしてから検証する
+        navController.navigate(R.id.action_login_to_home)
+        assertEquals(R.id.homeFragment, currentId())
+
         navController.navigate(R.id.action_home_to_login)
         assertEquals(R.id.loginFragment, currentId())
         assertFalse(navController.popBackStack())

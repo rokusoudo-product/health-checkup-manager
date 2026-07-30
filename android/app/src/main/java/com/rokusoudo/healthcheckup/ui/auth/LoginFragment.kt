@@ -60,12 +60,9 @@ class LoginFragment : Fragment() {
     }
 
     private fun setupGoogleSignIn() {
-        // TODO: google-services.json に client_type:3 の oauth_client を追加し、
-        //       Firebase Console で Web Client ID を設定すること。
-        //       現在 google-services.json に Web Client ID が未登録のため空文字を使用。
-        val webClientId = "735205368933-ndisk3lrvmgicvss0nfonv3o80nnavll.apps.googleusercontent.com"
+        // google-services.json の client_type:3 oauth_client から生成される Web Client ID を使用する
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(webClientId)
+            .requestIdToken(getString(R.string.default_web_client_id))
             .requestEmail()
             .build()
         googleSignInClient = GoogleSignIn.getClient(requireActivity(), gso)
