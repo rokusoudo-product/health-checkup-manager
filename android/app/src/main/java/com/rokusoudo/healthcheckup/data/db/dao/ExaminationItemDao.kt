@@ -3,6 +3,7 @@ package com.rokusoudo.healthcheckup.data.db.dao
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Update
 import com.rokusoudo.healthcheckup.data.db.entity.ExaminationItem
 import kotlinx.coroutines.flow.Flow
 
@@ -11,6 +12,9 @@ interface ExaminationItemDao {
 
     @Insert
     suspend fun insertAll(items: List<ExaminationItem>)
+
+    @Update
+    suspend fun updateAll(items: List<ExaminationItem>)
 
     @Query("DELETE FROM examination_items WHERE recordId = :recordId")
     suspend fun deleteByRecordId(recordId: Long)
@@ -49,4 +53,10 @@ interface ExaminationItemDao {
      */
     @Query("SELECT recordId, COUNT(*) as count FROM examination_items WHERE isAbnormal = 1 GROUP BY recordId")
     fun getAbnormalCountsByRecord(): Flow<List<RecordAbnormalCount>>
+
+    /**
+     * 指定した項目名を持つ検査項目を全件取得する（項目マスター基準値変更時の再計算対象抽出用）。
+     */
+    @Query("SELECT * FROM examination_items WHERE itemName = :itemName")
+    suspend fun getByItemName(itemName: String): List<ExaminationItem>
 }
