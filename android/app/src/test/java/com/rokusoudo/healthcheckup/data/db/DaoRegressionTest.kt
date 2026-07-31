@@ -102,6 +102,31 @@ class DaoRegressionTest {
     }
 
     @Test
+    fun `項目名指定で検査項目を全件取得できる`() = runBlocking {
+        insertRecordWithItems("2025-06-01", listOf(Triple("LDL", "150", false), Triple("HDL", "55", false)))
+        insertRecordWithItems("2024-06-01", listOf(Triple("LDL", "160", true)))
+
+        val items = db.itemDao().getByItemName("LDL")
+        assertEquals(2, items.size)
+        assertEquals(setOf("150", "160"), items.map { it.value }.toSet())
+    }
+
+    @Test
+    fun `updateAllで検査項目の基準値と判定を一括更新できる`() = runBlocking {
+        insertRecordWithItems("2025-06-01", listOf(Triple("LDL", "150", false)))
+        val items = db.itemDao().getByItemName("LDL")
+
+        db.itemDao().updateAll(
+            items.map { it.copy(referenceMin = null, referenceMax = 139.0, isAbnormal = true) }
+        )
+
+        val updated = db.itemDao().getByItemName("LDL")
+        assertEquals(1, updated.size)
+        assertEquals(139.0, updated[0].referenceMax!!, 0.0)
+        assertEquals(true, updated[0].isAbnormal)
+    }
+
+    @Test
     fun `項目マスターのupsertと取得ができる`() = runBlocking {
         db.masterDao().upsert(ItemMaster(itemName = "BMI", unit = "kg/m2", referenceMin = 18.5, referenceMax = 25.0))
         db.masterDao().upsert(ItemMaster(itemName = "BMI", unit = "kg/m2", referenceMin = 18.5, referenceMax = 24.9))

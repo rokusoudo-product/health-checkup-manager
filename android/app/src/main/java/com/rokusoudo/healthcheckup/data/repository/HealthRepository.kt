@@ -1,5 +1,6 @@
 package com.rokusoudo.healthcheckup.data.repository
 
+import androidx.room.withTransaction
 import com.google.firebase.auth.FirebaseAuth
 import com.rokusoudo.healthcheckup.OcrItem
 import com.rokusoudo.healthcheckup.data.db.HealthCheckupDatabase
@@ -13,10 +14,14 @@ import kotlinx.coroutines.flow.Flow
  * 健康診断データの Repository。
  * Room DB への読み書きと Cloud Firestore との同期を一元管理する。
  * 薬事法対応: isAbnormal は表示のみに使用し、医療診断を目的としない。
+ *
+ * @param currentUidProvider ログイン中ユーザーの uid 取得手段。既定は FirebaseAuth だが、
+ *   テストではフェイクの uid を返す関数に差し替え可能。
  */
 class HealthRepository(
     private val db: HealthCheckupDatabase,
-    private val firestoreRepository: FirestoreRepository
+    private val firestoreRepository: HealthCloudSync,
+    private val currentUidProvider: () -> String? = { FirebaseAuth.getInstance().currentUser?.uid }
 ) {
 
     /**
@@ -35,14 +40,6 @@ class HealthRepository(
 
         val examinationItems = items.map { ocrItem ->
             val master = db.masterDao().getByName(ocrItem.itemName)
-            val numericValue = ocrItem.value.toDoubleOrNull()
-            val isAbnormal = if (numericValue != null && master != null) {
-                val belowMin = master.referenceMin?.let { numericValue < it } ?: false
-                val aboveMax = master.referenceMax?.let { numericValue > it } ?: false
-                belowMin || aboveMax
-            } else {
-                false
-            }
             ExaminationItem(
                 recordId = recordId,
                 itemName = ocrItem.itemName,
@@ -50,7 +47,7 @@ class HealthRepository(
                 unit = ocrItem.unit,
                 referenceMin = master?.referenceMin,
                 referenceMax = master?.referenceMax,
-                isAbnormal = isAbnormal
+                isAbnormal = evaluateAbnormal(ocrItem.value, master?.referenceMin, master?.referenceMax)
             )
         }
         db.itemDao().insertAll(examinationItems)
@@ -62,7 +59,7 @@ class HealthRepository(
     }
 
     private suspend fun syncRecordToFirestore(record: ExaminationRecord, items: List<ExaminationItem>) {
-        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val uid = currentUidProvider() ?: return
         try {
             firestoreRepository.saveRecord(uid, record, items)
         } catch (_: Exception) {
@@ -81,15 +78,56 @@ class HealthRepository(
 
     fun getAllMasters(): Flow<List<ItemMaster>> = db.masterDao().getAll()
 
-    // TODO: 項目マスターの基準値変更時、既存の ExaminationItem.isAbnormal は再計算されない。
-    // P1スコープ外のため対応保留（次回スプリントで対応予定）。
+    /**
+     * 項目マスターを更新する。
+     * 基準値（referenceMin / referenceMax）が実際に変化した場合のみ、
+     * 当該項目名の既存 ExaminationItem 全件を新基準で再計算する
+     * （カテゴリ変更・お気に入りトグルでは再計算しない＝不要な全件 UPDATE を避ける）。
+     * 再計算対象となった記録は Firestore にも再同期する。
+     */
     suspend fun upsertMaster(master: ItemMaster) {
-        db.masterDao().upsert(master)
+        val previous = db.masterDao().getByName(master.itemName)
+        val shouldRecalculate = referenceRangeChanged(previous, master)
+
+        val affectedRecordIds: List<Long> = if (shouldRecalculate) {
+            db.withTransaction {
+                db.masterDao().upsert(master)
+                val existingItems = db.itemDao().getByItemName(master.itemName)
+                val recalculated = existingItems.map { item ->
+                    item.copy(
+                        referenceMin = master.referenceMin,
+                        referenceMax = master.referenceMax,
+                        isAbnormal = evaluateAbnormal(item.value, master.referenceMin, master.referenceMax)
+                    )
+                }
+                if (recalculated.isNotEmpty()) {
+                    db.itemDao().updateAll(recalculated)
+                }
+                recalculated.map { it.recordId }.distinct()
+            }
+        } else {
+            db.masterDao().upsert(master)
+            emptyList()
+        }
+
         // 項目マスターもFirestoreへ同期
-        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val uid = currentUidProvider() ?: return
         try {
             firestoreRepository.saveItemMaster(uid, master)
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+            // オフライン時など同期失敗は無視
+        }
+
+        // 再計算対象の記録をFirestoreにも再同期し、Web版との整合を保つ
+        for (recordId in affectedRecordIds) {
+            val record = db.recordDao().getById(recordId) ?: continue
+            val itemsForRecord = db.itemDao().getByRecordIdOnce(recordId)
+            try {
+                firestoreRepository.saveRecord(uid, record, itemsForRecord)
+            } catch (_: Exception) {
+                // オフライン時など同期失敗は無視
+            }
+        }
     }
 
     /**
@@ -130,6 +168,30 @@ class HealthRepository(
             }
         } catch (_: Exception) {
             // ネットワーク不可時は無視（既存のローカルデータをそのまま使用）
+        }
+    }
+
+    companion object {
+        /**
+         * 検査値が基準値外かどうかを判定する。
+         * saveRecord() と upsertMaster() の再計算処理で共通利用する。
+         * 薬事法対応: 表示ハイライト用途のみで、医療的な合否判定ではない。
+         */
+        internal fun evaluateAbnormal(value: String?, min: Double?, max: Double?): Boolean {
+            val numericValue = value?.toDoubleOrNull() ?: return false
+            val belowMin = min?.let { numericValue < it } ?: false
+            val aboveMax = max?.let { numericValue > it } ?: false
+            return belowMin || aboveMax
+        }
+
+        /**
+         * 項目マスターの referenceMin / referenceMax が実際に変化したかどうかを判定する。
+         * カテゴリ変更・お気に入りトグルのみの更新では false を返し、
+         * ExaminationItem の不要な全件再計算・UPDATE を避ける。
+         */
+        internal fun referenceRangeChanged(previous: ItemMaster?, updated: ItemMaster): Boolean {
+            return previous?.referenceMin != updated.referenceMin ||
+                previous?.referenceMax != updated.referenceMax
         }
     }
 }

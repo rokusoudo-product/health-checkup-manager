@@ -16,7 +16,7 @@ import kotlinx.coroutines.tasks.await
  *
  * 薬事法対応: 保存・取得はデータの表示目的のみ。医療診断に使用しない。
  */
-class FirestoreRepository {
+class FirestoreRepository : HealthCloudSync {
 
     private val db: FirebaseFirestore = Firebase.firestore
 
@@ -30,7 +30,7 @@ class FirestoreRepository {
      * 診断記録をFirestoreに保存する。
      * ドキュメントID = Room の recordId（文字列）でクロスプラットフォーム同期を担保。
      */
-    suspend fun saveRecord(uid: String, record: ExaminationRecord, items: List<ExaminationItem>) {
+    override suspend fun saveRecord(uid: String, record: ExaminationRecord, items: List<ExaminationItem>) {
         val data = mapOf(
             "date" to record.date,
             "facility" to record.facility,
@@ -53,7 +53,7 @@ class FirestoreRepository {
      * 項目マスターをFirestoreに保存する。
      * ドキュメントID = itemName。
      */
-    suspend fun saveItemMaster(uid: String, master: ItemMaster) {
+    override suspend fun saveItemMaster(uid: String, master: ItemMaster) {
         mastersRef(uid).document(master.itemName).set(
             mapOf(
                 "unit" to master.unit,
@@ -69,7 +69,7 @@ class FirestoreRepository {
     /**
      * Firestoreから全診断記録を取得する（他端末データ復元用）。
      */
-    suspend fun fetchRecords(uid: String): List<Pair<ExaminationRecord, List<ExaminationItem>>> {
+    override suspend fun fetchRecords(uid: String): List<Pair<ExaminationRecord, List<ExaminationItem>>> {
         val snapshot = recordsRef(uid).get().await()
         return snapshot.documents.mapNotNull { doc ->
             val id = doc.id.toLongOrNull() ?: return@mapNotNull null
@@ -99,7 +99,7 @@ class FirestoreRepository {
     /**
      * Firestoreから全項目マスターを取得する（他端末データ復元用）。
      */
-    suspend fun fetchItemMasters(uid: String): List<ItemMaster> {
+    override suspend fun fetchItemMasters(uid: String): List<ItemMaster> {
         val snapshot = mastersRef(uid).get().await()
         return snapshot.documents.mapNotNull { doc ->
             ItemMaster(
