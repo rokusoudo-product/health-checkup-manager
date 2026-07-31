@@ -34,10 +34,13 @@ class MainActivity : AppCompatActivity() {
         val navInflater = navHostFragment.navController.navInflater
         val graph = navInflater.inflate(R.navigation.nav_graph)
 
-        // TODO: Firebase Console で Web Client ID を設定後に認証を有効化する
-        // 現在は google-services.json に Web Client ID 未登録のため認証をスキップし
-        // S-02 ホームを開始画面にする（認証有効化時: currentUser == null なら loginFragment）
-        graph.setStartDestination(R.id.homeFragment)
+        // 未ログイン（currentUser == null）なら S-01 ログイン画面、ログイン済みなら S-02 ホームを開始画面にする
+        val startDestinationId = if (FirebaseAuth.getInstance().currentUser == null) {
+            R.id.loginFragment
+        } else {
+            R.id.homeFragment
+        }
+        graph.setStartDestination(startDestinationId)
 
         navController = navHostFragment.navController
         navController.graph = graph
