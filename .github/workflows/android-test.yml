@@ -19,6 +19,11 @@ jobs:
       - uses: gradle/actions/setup-gradle@v3
 
       # google-services.json は秘匿のため未コミット。単体テスト用にダミーを生成する
+      #
+      # oauth_client に client_type: 3（Web）のエントリを必ず含めること。
+      # google-services Gradle プラグインは client_type: 3 が存在するときだけ
+      # R.string.default_web_client_id を生成するため、空配列にすると
+      # Google SSO のコード（LoginFragment）が Unresolved reference でコンパイルできない。
       - name: Provide dummy google-services.json
         run: |
           if [ ! -f android/app/google-services.json ]; then
@@ -35,9 +40,23 @@ jobs:
                   "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
                   "android_client_info": { "package_name": "com.rokusoudo.healthcheckup" }
                 },
-                "oauth_client": [],
+                "oauth_client": [
+                  {
+                    "client_id": "000000000000-dummydummydummydummydummydummy00.apps.googleusercontent.com",
+                    "client_type": 3
+                  }
+                ],
                 "api_key": [{ "current_key": "AIzaDummyDummyDummyDummyDummyDummy000" }],
-                "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": [
+                      {
+                        "client_id": "000000000000-dummydummydummydummydummydummy00.apps.googleusercontent.com",
+                        "client_type": 3
+                      }
+                    ]
+                  }
+                }
               }
             ],
             "configuration_version": "1"
