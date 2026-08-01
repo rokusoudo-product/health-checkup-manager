@@ -26,10 +26,11 @@ jobs:
           cache-dependency-path: firestore-tests/package-lock.json
 
       # Firestore エミュレータは JVM 上で動作するため Java が必要
+      # firebase-tools は Java 21 未満のサポートを近く終了予定のため 21 を指定する
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "21"
 
       - name: Install firestore-tests dependencies
         run: npm ci --prefix firestore-tests
