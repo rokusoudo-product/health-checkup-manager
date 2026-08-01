@@ -50,7 +50,7 @@
 ## Phase 6: S-07 / S-01 ✅
 
 - [x] ContactFragment（mailto Intent・メーラー不在エラー処理）
-    - [ ] **要確認: contact_email の実アドレス（現在 info@example.com のプレースホルダ）**
+    - [x] contact_email の実アドレス確定（2026-08-01 代表決定: `info@rokusoudo.co.jp`）
 - [x] S-01 仕様一致確認（Google SSO 維持。MainActivity の認証スキップTODOは現行踏襲）
 
 ## Phase 7: 仕上げ

@@ -35,11 +35,11 @@
     <color name="category_body">#FF00796B</color>
     <color name="category_blood_pressure">#FFC62828</color>
     <color name="category_blood">#FFAD1457</color>
-    <color name="category_lipid">#FFEF6C00</color>
+    <color name="category_lipid">#FFB34700</color>
     <color name="category_liver">#FF2E7D32</color>
     <color name="category_kidney">#FF1565C0</color>
     <color name="category_glucose">#FF6A1B9A</color>
-    <color name="category_urine">#FFF9A825</color>
+    <color name="category_urine">#FF946200</color>
     <color name="category_other">#FF546E7A</color>
 
     <!-- 刷新001: お気に入り♥（DESIGN.md favorite トークン） -->
