@@ -2,6 +2,8 @@
 
 > **作成日:** 2026-04-03  
 > **担当:** po_agent
+<!-- verify(issue-9): firestore-rules-test.yml が無関係な変更でスキップされることの検証用コメント。マージ禁止・確認後revert -->
+
 
 ---
 
