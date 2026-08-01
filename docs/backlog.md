@@ -2,6 +2,8 @@
 
 > **作成日:** 2026-04-03  
 > **担当:** po_agent
+<!-- verify(issue-9): unrelated-change skip check. no-merge. -->
+
 
 ---
 
