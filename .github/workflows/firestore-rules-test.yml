@@ -1,0 +1,39 @@
+name: Firestore Rules Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "firestore.rules"
+      - "firestore-tests/**"
+      - ".github/workflows/firestore-rules-test.yml"
+  pull_request:
+    paths:
+      - "firestore.rules"
+      - "firestore-tests/**"
+      - ".github/workflows/firestore-rules-test.yml"
+
+jobs:
+  rules-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: firestore-tests/package-lock.json
+
+      # Firestore エミュレータは JVM 上で動作するため Java が必要
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install firestore-tests dependencies
+        run: npm ci --prefix firestore-tests
+
+      # firebase emulators:exec はダミー project ID で動作するため Firebase の認証情報は不要
+      - name: Run firestore.rules unit tests (Firebase Emulator)
+        run: npm --prefix firestore-tests run test:emulator

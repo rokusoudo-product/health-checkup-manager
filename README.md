@@ -98,6 +98,21 @@ health-checkup-manager/
 
 See [docs/](docs/) for architecture design and backlog, and [specs/001-screen-flow-renewal/](specs/001-screen-flow-renewal/) for the ongoing screen-flow renewal.
 
+## Testing
+
+### Firestore rules unit tests
+
+`firestore.rules` is covered by unit tests (`firestore-tests/rules.test.mjs`) that run against the Firebase Emulator. These are enforced in CI by [`.github/workflows/firestore-rules-test.yml`](.github/workflows/firestore-rules-test.yml) on any push/PR touching `firestore.rules` or `firestore-tests/**`.
+
+To run them locally:
+
+```bash
+npm ci --prefix firestore-tests
+npm --prefix firestore-tests run test:emulator
+```
+
+This spins up the Firestore Emulator with a dummy project ID (no Firebase credentials required) and executes all rules tests against it.
+
 ## Compliance
 
 This app displays health data only. It does not provide medical diagnosis, treatment advice, or improvement suggestions, in compliance with Japanese pharmaceutical and medical device regulations.
