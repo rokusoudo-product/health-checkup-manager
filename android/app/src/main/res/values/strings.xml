@@ -49,8 +49,7 @@
 
     <!-- S-07 Contact (刷新001) -->
     <string name="title_contact">お問い合わせ</string>
-    <!-- TODO: 実運用のサポート窓口アドレスを代表確認のうえ差し替える（決定Q9: mailto方式） -->
-    <string name="contact_email" translatable="false">info@example.com</string>
+    <string name="contact_email" translatable="false">info@rokusoudo.co.jp</string>
     <string name="label_contact_info">ご意見・不具合のご報告は下記フォームからお送りください。\n「送信」でメールアプリが起動します。</string>
     <string name="hint_contact_name">お名前</string>
     <string name="hint_contact_body">お問い合わせ内容</string>
