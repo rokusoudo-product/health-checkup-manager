@@ -3,15 +3,7 @@ name: Firestore Rules Tests
 on:
   push:
     branches: [main]
-    paths:
-      - "firestore.rules"
-      - "firestore-tests/**"
-      - ".github/workflows/firestore-rules-test.yml"
   pull_request:
-    paths:
-      - "firestore.rules"
-      - "firestore-tests/**"
-      - ".github/workflows/firestore-rules-test.yml"
 
 jobs:
   rules-test:
