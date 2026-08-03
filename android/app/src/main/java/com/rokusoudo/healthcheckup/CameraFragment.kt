@@ -176,8 +176,14 @@ class CameraFragment : Fragment() {
     }
 
     /**
-     * 撮影リスト内の全画像をML KitでOCR処理し、テキストを結合してOCR結果画面に遷移する。
-     * 処理はIOディスパッチャで非同期実行。
+     * 撮影リスト内の全画像をML KitでOCR処理し、座標付きセル（[OcrCell]）に変換して
+     * OCR結果画面に遷移する。処理はIOディスパッチャで非同期実行。
+     *
+     * Issue #12: 行の文字列を空白区切りで解釈する方式では、健診結果表のように
+     * 1行に複数の数値が並ぶ表形式を正しく解析できないため、ML Kit の
+     * `boundingBox`（座標）を保持した [OcrCell] のリストを OcrResultFragment に渡し、
+     * 座標ベースのレイアウト解析（[OcrParser]）に委ねる。
+     * 複数枚撮影時は画像ごとに座標系が独立するため、`page` にキャプチャ順のインデックスを持たせる。
      */
     private fun startOcrProcessing() {
         binding.btnStartOcr.isEnabled = false
@@ -185,10 +191,11 @@ class CameraFragment : Fragment() {
 
         ocrScope.launch {
             val combinedText = StringBuilder()
+            val allCells = mutableListOf<OcrCell>()
             var totalBlocks = 0
             var totalLines = 0
 
-            for (imageProxy in capturedImages) {
+            capturedImages.forEachIndexed { pageIndex, imageProxy ->
                 try {
                     val inputImage = InputImage.fromMediaImage(
                         imageProxy.image!!,
@@ -199,6 +206,23 @@ class CameraFragment : Fragment() {
                     totalBlocks += result.textBlocks.size
                     result.textBlocks.forEach { block ->
                         totalLines += block.lines.size
+                        block.lines.forEach { line ->
+                            line.elements.forEach { element ->
+                                val box = element.boundingBox
+                                if (box != null && element.text.isNotBlank()) {
+                                    allCells.add(
+                                        OcrCell(
+                                            text = element.text,
+                                            left = box.left,
+                                            top = box.top,
+                                            right = box.right,
+                                            bottom = box.bottom,
+                                            page = pageIndex
+                                        )
+                                    )
+                                }
+                            }
+                        }
                     }
                     combinedText.append(result.text).append("\n")
                 } catch (e: Exception) {
@@ -211,29 +235,22 @@ class CameraFragment : Fragment() {
 
             val ocrText = combinedText.toString().trim()
 
-            // エラー評価
+            // エラー評価（従来どおりテキスト量・信頼度ヒューリスティックで判定）
             val confidence = OcrAnalyzer.estimateConfidence(ocrText, totalBlocks, totalLines)
             val ocrError = OcrAnalyzer.evaluate(ocrText, totalBlocks, confidence)
 
             // UIスレッドで遷移
             launch(Dispatchers.Main) {
-                navigateToOcrResult(ocrText, ocrError)
+                navigateToOcrResult(allCells, ocrError)
             }
         }
     }
 
-    private fun navigateToOcrResult(ocrText: String, ocrError: OcrAnalyzer.OcrError) {
-        // OcrResultFragment へ結果を渡す
-        // エラー情報はOCRテキストに特殊プレフィクスを付与して伝達する
-        // （Safe Args 生成クラスは NavGraph の argument 定義に基づく）
-        val errorPrefix = when (ocrError) {
-            OcrAnalyzer.OcrError.INSUFFICIENT_TEXT -> ERROR_PREFIX_INSUFFICIENT
-            OcrAnalyzer.OcrError.LOW_CONFIDENCE -> ERROR_PREFIX_LOW_CONFIDENCE
-            OcrAnalyzer.OcrError.NONE -> ""
-        }
-        val payload = errorPrefix + ocrText
-
-        val action = CameraFragmentDirections.actionCameraToOcrResult(payload)
+    private fun navigateToOcrResult(cells: List<OcrCell>, ocrError: OcrAnalyzer.OcrError) {
+        val action = CameraFragmentDirections.actionCameraToOcrResult(
+            cells.toTypedArray(),
+            ocrError.name
+        )
         findNavController().navigate(action)
     }
 
@@ -253,7 +270,5 @@ class CameraFragment : Fragment() {
 
     companion object {
         private const val TAG = "CameraFragment"
-        const val ERROR_PREFIX_INSUFFICIENT = "##ERROR_INSUFFICIENT##"
-        const val ERROR_PREFIX_LOW_CONFIDENCE = "##ERROR_LOW_CONFIDENCE##"
     }
 }

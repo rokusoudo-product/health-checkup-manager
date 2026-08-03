@@ -93,11 +93,16 @@
         android:label="@string/title_ocr_result"
         tools:layout="@layout/fragment_ocr_result">
 
-        <!-- OCRテキスト（エラープレフィクスを含む場合あり）をCameraFragmentから受け取る -->
+        <!-- OCR結果セル（座標付き。Issue #12でテキスト文字列から変更）をCameraFragmentから受け取る -->
         <argument
-            android:name="ocrText"
+            android:name="ocrCells"
+            app:argType="com.rokusoudo.healthcheckup.OcrCell[]" />
+
+        <!-- OCR品質エラー種別（OcrAnalyzer.OcrError の name()） -->
+        <argument
+            android:name="ocrError"
             app:argType="string"
-            android:defaultValue="" />
+            android:defaultValue="NONE" />
     </fragment>
 
     <!-- S-06b 手入力フォーム（登録完了時はコードで popBackStack(homeFragment) しホームへ戻る） -->
