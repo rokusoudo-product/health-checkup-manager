@@ -63,30 +63,16 @@ class OcrResultFragment : Fragment() {
             requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
 
-        val rawPayload = args.ocrText
-        val (ocrText, errorType) = parsePayload(rawPayload)
+        // Issue #12: CameraFragment からは座標付きセル（OcrCell[]）とエラー種別（enum name）を
+        // 別々の引数として受け取る（従来のテキスト+プレフィクスの合成方式から変更）。
+        val cells = args.ocrCells.toList()
+        val errorType = runCatching { OcrAnalyzer.OcrError.valueOf(args.ocrError) }
+            .getOrDefault(OcrAnalyzer.OcrError.NONE)
 
         setupErrorMessage(errorType)
-        setupRecyclerView(ocrText)
+        setupRecyclerView(cells)
         setupSaveButton()
         observeSaveState()
-    }
-
-    /**
-     * CameraFragment からのペイロードを解析し、OCRテキストとエラー種別に分離する。
-     */
-    private fun parsePayload(payload: String): Pair<String, OcrAnalyzer.OcrError> {
-        return when {
-            payload.startsWith(CameraFragment.ERROR_PREFIX_INSUFFICIENT) -> {
-                val text = payload.removePrefix(CameraFragment.ERROR_PREFIX_INSUFFICIENT)
-                Pair(text, OcrAnalyzer.OcrError.INSUFFICIENT_TEXT)
-            }
-            payload.startsWith(CameraFragment.ERROR_PREFIX_LOW_CONFIDENCE) -> {
-                val text = payload.removePrefix(CameraFragment.ERROR_PREFIX_LOW_CONFIDENCE)
-                Pair(text, OcrAnalyzer.OcrError.LOW_CONFIDENCE)
-            }
-            else -> Pair(payload, OcrAnalyzer.OcrError.NONE)
-        }
     }
 
     private fun setupErrorMessage(errorType: OcrAnalyzer.OcrError) {
@@ -106,8 +92,8 @@ class OcrResultFragment : Fragment() {
         }
     }
 
-    private fun setupRecyclerView(ocrText: String) {
-        val items = OcrParser.parse(ocrText).toMutableList()
+    private fun setupRecyclerView(cells: List<OcrCell>) {
+        val items = OcrParser.parse(cells).toMutableList()
         ocrItemAdapter = OcrItemAdapter(items)
 
         binding.recyclerOcrItems.apply {
