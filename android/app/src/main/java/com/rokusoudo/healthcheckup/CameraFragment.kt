@@ -2,6 +2,8 @@ package com.rokusoudo.healthcheckup
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -31,6 +33,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -42,8 +45,24 @@ class CameraFragment : Fragment() {
     private lateinit var cameraExecutor: ExecutorService
     private var imageCapture: ImageCapture? = null
 
-    // 撮影した画像プロキシのリスト（複数枚対応）
-    private val capturedImages: MutableList<ImageProxy> = mutableListOf()
+    /**
+     * OCR処理待ちの入力ソース（複数対応）。
+     * Issue #17: カメラ撮影に加え、SAFで選択したPDF（ページごとにBitmap化）・画像ファイルも
+     * 同じリストに積み、[startOcrProcessing] で共通処理する。
+     */
+    private sealed class OcrSource {
+        /** カメラ撮影（CameraX） */
+        data class Capture(val imageProxy: ImageProxy) : OcrSource()
+
+        /** SAFで選択したPDFのページをレンダリングしたBitmap */
+        data class ImportedBitmap(val bitmap: Bitmap) : OcrSource()
+
+        /** SAFで選択した画像ファイル（JPEG/PNG等）そのもの */
+        data class ImportedFile(val uri: Uri) : OcrSource()
+    }
+
+    // OCR処理待ちの入力ソース（複数枚対応。カメラ撮影・ファイル取り込みを問わない）
+    private val pendingSources: MutableList<OcrSource> = mutableListOf()
 
     // OCR処理用コルーチンスコープ
     private val ocrScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -64,6 +83,17 @@ class CameraFragment : Fragment() {
             }
         }
 
+    /**
+     * Issue #17: 保存済みPDF・画像ファイルの選択（Storage Access Framework）。
+     * `ActivityResultContracts.OpenDocument` はストレージ権限のリクエストを必要としない。
+     */
+    private val openDocumentLauncher =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) {
+                importFile(uri)
+            }
+        }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -78,6 +108,7 @@ class CameraFragment : Fragment() {
         cameraExecutor = Executors.newSingleThreadExecutor()
 
         applyBottomControlsInsets()
+        applyTopControlsInsets()
 
         // パーミッション確認
         if (hasCameraPermission()) {
@@ -91,9 +122,14 @@ class CameraFragment : Fragment() {
         }
 
         binding.btnStartOcr.setOnClickListener {
-            if (capturedImages.isNotEmpty()) {
+            if (pendingSources.isNotEmpty()) {
                 startOcrProcessing()
             }
+        }
+
+        binding.btnImportFile.setOnClickListener {
+            // application/pdf と image/* を受付。ACTION_OPEN_DOCUMENT のためストレージ権限は不要。
+            openDocumentLauncher.launch(arrayOf("application/pdf", "image/*"))
         }
 
         updateCapturedCountUI()
@@ -108,6 +144,19 @@ class CameraFragment : Fragment() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.bottomControls) { view, insets ->
             val navBarInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
             view.updatePadding(bottom = initialBottomPadding + navBarInsets.bottom)
+            insets
+        }
+    }
+
+    /**
+     * targetSdk 35 の edge-to-edge 強制により「ファイルから読み込む」ボタン（[top_controls]）が
+     * ステータスバーに被るため、ステータスバー分を top padding に加算する。
+     */
+    private fun applyTopControlsInsets() {
+        val initialTopPadding = binding.topControls.paddingTop
+        ViewCompat.setOnApplyWindowInsetsListener(binding.topControls) { view, insets ->
+            val statusBarInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+            view.updatePadding(top = initialTopPadding + statusBarInsets.top)
             insets
         }
     }
@@ -155,9 +204,9 @@ class CameraFragment : Fragment() {
             ContextCompat.getMainExecutor(requireContext()),
             object : ImageCapture.OnImageCapturedCallback() {
                 override fun onCaptureSuccess(image: ImageProxy) {
-                    capturedImages.add(image)
+                    pendingSources.add(OcrSource.Capture(image))
                     updateCapturedCountUI()
-                    Log.d(TAG, "撮影成功: ${capturedImages.size}枚目")
+                    Log.d(TAG, "撮影成功: ${pendingSources.size}枚目")
                 }
 
                 override fun onError(exception: ImageCaptureException) {
@@ -168,26 +217,88 @@ class CameraFragment : Fragment() {
         )
     }
 
+    /**
+     * Issue #17: SAFで選択したファイルのMIMEタイプを判定し、PDFならページをBitmap化して、
+     * 画像ならそのまま [pendingSources] に積む。破損ファイル・パスワード付きPDF・
+     * 非対応形式はここでエラー分類してトースト表示し、クラッシュさせない。
+     */
+    private fun importFile(uri: Uri) {
+        val mimeType = requireContext().contentResolver.getType(uri)
+
+        if (!FileImportUtils.isSupportedMimeType(mimeType)) {
+            showImportError(FileImportUtils.FileImportError.UNSUPPORTED_FORMAT)
+            return
+        }
+
+        if (FileImportUtils.isPdfMimeType(mimeType)) {
+            importPdf(uri)
+        } else {
+            // 画像はIssue仕様どおり InputImage.fromFilePath() にそのまま渡すため、
+            // ここではUriを保持するだけでデコードは行わない。
+            pendingSources.add(OcrSource.ImportedFile(uri))
+            updateCapturedCountUI()
+        }
+    }
+
+    private fun importPdf(uri: Uri) {
+        ocrScope.launch {
+            try {
+                val bitmaps = withContext(Dispatchers.IO) {
+                    PdfPageRenderer.renderPages(requireContext(), uri)
+                }
+                withContext(Dispatchers.Main) {
+                    bitmaps.forEach { pendingSources.add(OcrSource.ImportedBitmap(it)) }
+                    updateCapturedCountUI()
+                }
+            } catch (e: FileImportException) {
+                Log.e(TAG, "PDF読み込みエラー", e)
+                withContext(Dispatchers.Main) { showImportError(e.error) }
+            } catch (e: Exception) {
+                Log.e(TAG, "PDF読み込みエラー", e)
+                withContext(Dispatchers.Main) {
+                    showImportError(FileImportUtils.classifyThrowable(e))
+                }
+            }
+        }
+    }
+
+    private fun showImportError(error: FileImportUtils.FileImportError) {
+        val messageRes = when (error) {
+            FileImportUtils.FileImportError.UNSUPPORTED_FORMAT -> R.string.error_import_unsupported_format
+            FileImportUtils.FileImportError.PASSWORD_PROTECTED -> R.string.error_import_password_protected
+            FileImportUtils.FileImportError.CORRUPTED_FILE -> R.string.error_import_corrupted_file
+            FileImportUtils.FileImportError.EMPTY_PDF -> R.string.error_import_empty_pdf
+            FileImportUtils.FileImportError.UNKNOWN -> R.string.error_import_unknown
+        }
+        Toast.makeText(requireContext(), getString(messageRes), Toast.LENGTH_LONG).show()
+    }
+
     private fun updateCapturedCountUI() {
-        val count = capturedImages.size
+        val count = pendingSources.size
         binding.tvCapturedCount.text = getString(R.string.label_captured_count, count)
         binding.btnStartOcr.visibility = if (count > 0) View.VISIBLE else View.GONE
         binding.btnStartOcr.text = getString(R.string.btn_start_ocr, count)
     }
 
     /**
-     * 撮影リスト内の全画像をML KitでOCR処理し、座標付きセル（[OcrCell]）に変換して
+     * 撮影・取り込み済みの全ソースをML KitでOCR処理し、座標付きセル（[OcrCell]）に変換して
      * OCR結果画面に遷移する。処理はIOディスパッチャで非同期実行。
      *
      * Issue #12: 行の文字列を空白区切りで解釈する方式では、健診結果表のように
      * 1行に複数の数値が並ぶ表形式を正しく解析できないため、ML Kit の
      * `boundingBox`（座標）を保持した [OcrCell] のリストを OcrResultFragment に渡し、
      * 座標ベースのレイアウト解析（[OcrParser]）に委ねる。
-     * 複数枚撮影時は画像ごとに座標系が独立するため、`page` にキャプチャ順のインデックスを持たせる。
+     * 複数枚撮影・複数ページ取り込み時はソースごとに座標系が独立するため、
+     * `page` に処理順のインデックスを持たせる。
+     *
+     * Issue #17: カメラ撮影（[OcrSource.Capture]）・PDFページ（[OcrSource.ImportedBitmap]）・
+     * 画像ファイル（[OcrSource.ImportedFile]）のいずれも、ここで [InputImage] に変換した後は
+     * 完全に同じ経路（ML Kit → [OcrAnalyzer] → OcrResultFragment）で処理する。
      */
     private fun startOcrProcessing() {
         binding.btnStartOcr.isEnabled = false
         binding.btnCapture.isEnabled = false
+        binding.btnImportFile.isEnabled = false
 
         ocrScope.launch {
             val combinedText = StringBuilder()
@@ -195,12 +306,16 @@ class CameraFragment : Fragment() {
             var totalBlocks = 0
             var totalLines = 0
 
-            capturedImages.forEachIndexed { pageIndex, imageProxy ->
+            pendingSources.forEachIndexed { pageIndex, source ->
                 try {
-                    val inputImage = InputImage.fromMediaImage(
-                        imageProxy.image!!,
-                        imageProxy.imageInfo.rotationDegrees
-                    )
+                    val inputImage = when (source) {
+                        is OcrSource.Capture -> InputImage.fromMediaImage(
+                            source.imageProxy.image!!,
+                            source.imageProxy.imageInfo.rotationDegrees
+                        )
+                        is OcrSource.ImportedBitmap -> InputImage.fromBitmap(source.bitmap, 0)
+                        is OcrSource.ImportedFile -> InputImage.fromFilePath(requireContext(), source.uri)
+                    }
                     val result = textRecognizer.process(inputImage).await()
 
                     totalBlocks += result.textBlocks.size
@@ -228,10 +343,10 @@ class CameraFragment : Fragment() {
                 } catch (e: Exception) {
                     Log.e(TAG, "OCR処理エラー", e)
                 } finally {
-                    imageProxy.close()
+                    releaseSource(source)
                 }
             }
-            capturedImages.clear()
+            pendingSources.clear()
 
             val ocrText = combinedText.toString().trim()
 
@@ -254,10 +369,19 @@ class CameraFragment : Fragment() {
         findNavController().navigate(action)
     }
 
+    /** [OcrSource] が保持するリソース（ImageProxy / Bitmap）を解放する。ImportedFileは解放不要。 */
+    private fun releaseSource(source: OcrSource) {
+        when (source) {
+            is OcrSource.Capture -> source.imageProxy.close()
+            is OcrSource.ImportedBitmap -> source.bitmap.recycle()
+            is OcrSource.ImportedFile -> Unit
+        }
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
-        capturedImages.forEach { it.close() }
-        capturedImages.clear()
+        pendingSources.forEach { releaseSource(it) }
+        pendingSources.clear()
         _binding = null
     }
 
