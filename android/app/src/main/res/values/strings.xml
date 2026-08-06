@@ -7,6 +7,14 @@
     <string name="btn_start_ocr">OCR開始 (%d枚)</string>
     <string name="label_captured_count">撮影済み: %d枚</string>
 
+    <!-- Camera screen: Issue #17 ファイル取り込み導線 -->
+    <string name="btn_import_file">📁 ファイルから読み込む</string>
+    <string name="error_import_unsupported_format">対応していないファイル形式です</string>
+    <string name="error_import_password_protected">パスワード付きのPDFは読み込めません</string>
+    <string name="error_import_corrupted_file">ファイルを読み込めませんでした。ファイルが破損している可能性があります</string>
+    <string name="error_import_empty_pdf">PDFにページが含まれていません</string>
+    <string name="error_import_unknown">ファイルの読み込み中にエラーが発生しました</string>
+
     <!-- OCR result screen -->
     <string name="title_ocr_result">OCR結果確認</string>
     <string name="hint_item_name">項目名</string>
