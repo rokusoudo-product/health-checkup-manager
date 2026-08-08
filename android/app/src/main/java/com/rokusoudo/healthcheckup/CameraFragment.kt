@@ -24,6 +24,7 @@ import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions
 import com.rokusoudo.healthcheckup.databinding.FragmentCameraBinding
@@ -294,6 +295,10 @@ class CameraFragment : Fragment() {
      * Issue #17: カメラ撮影（[OcrSource.Capture]）・PDFページ（[OcrSource.ImportedBitmap]）・
      * 画像ファイル（[OcrSource.ImportedFile]）のいずれも、ここで [InputImage] に変換した後は
      * 完全に同じ経路（ML Kit → [OcrAnalyzer] → OcrResultFragment）で処理する。
+     *
+     * Issue #16: 紙面自体が回転して撮影・取り込みされた場合、行・列クラスタリングが成立しないため、
+     * 1回目の認識結果の傾きから回転を推定し（[OcrRotationCorrector]）、必要な場合のみ
+     * 画像を回転させて再認識する（[recognizeWithRotationCorrection]）。
      */
     private fun startOcrProcessing() {
         binding.btnStartOcr.isEnabled = false
@@ -308,15 +313,7 @@ class CameraFragment : Fragment() {
 
             pendingSources.forEachIndexed { pageIndex, source ->
                 try {
-                    val inputImage = when (source) {
-                        is OcrSource.Capture -> InputImage.fromMediaImage(
-                            source.imageProxy.image!!,
-                            source.imageProxy.imageInfo.rotationDegrees
-                        )
-                        is OcrSource.ImportedBitmap -> InputImage.fromBitmap(source.bitmap, 0)
-                        is OcrSource.ImportedFile -> InputImage.fromFilePath(requireContext(), source.uri)
-                    }
-                    val result = textRecognizer.process(inputImage).await()
+                    val result = recognizeWithRotationCorrection(source)
 
                     totalBlocks += result.textBlocks.size
                     result.textBlocks.forEach { block ->
@@ -359,6 +356,86 @@ class CameraFragment : Fragment() {
                 navigateToOcrResult(allCells, ocrError)
             }
         }
+    }
+
+    /**
+     * 1つの [OcrSource] に対し、必要な場合のみ紙面の回転補正を行ったうえでML Kit認識結果を返す。
+     *
+     * 1. ソースの種別に応じた従来どおりの [InputImage]（カメラ撮影は向き補正のみ、取り込みは
+     *    そのまま）で1回目の認識を行う（Bitmap変換のオーバーヘッドをかけない）
+     * 2. 認識できた要素の `cornerPoints` から紙面の回転を推定する（[OcrRotationCorrector]）
+     * 3. 回転が疑われる場合のみ、画像をBitmapに変換して回転させ、再認識する（最大1回）
+     * 4. 回転前後の認識結果を文字数・行数で比較し、良い方を採用する
+     *
+     * 回転していない画像（1回目の認識結果が十分な場合）では2回目の認識は行われないため、
+     * 処理時間は従来と変わらない。
+     */
+    private suspend fun recognizeWithRotationCorrection(source: OcrSource): Text {
+        val originalInputImage = when (source) {
+            is OcrSource.Capture -> InputImage.fromMediaImage(
+                source.imageProxy.image!!,
+                source.imageProxy.imageInfo.rotationDegrees
+            )
+            is OcrSource.ImportedBitmap -> InputImage.fromBitmap(source.bitmap, 0)
+            is OcrSource.ImportedFile -> InputImage.fromFilePath(requireContext(), source.uri)
+        }
+        val originalResult = textRecognizer.process(originalInputImage).await()
+
+        val angles = originalResult.textBlocks
+            .flatMap { it.lines }
+            .flatMap { it.elements }
+            .mapNotNull { element ->
+                val corners = element.cornerPoints?.map {
+                    OcrRotationCorrector.CornerPoint(it.x.toFloat(), it.y.toFloat())
+                }
+                corners?.let { OcrRotationCorrector.elementAngleDegrees(it) }
+            }
+
+        val elementCount = angles.size
+        val charCount = originalResult.text.trim().length
+        val medianAngle = OcrRotationCorrector.medianAngleDegrees(angles)
+        val rotationCandidate = OcrRotationCorrector.quantizeTo90(medianAngle)
+
+        val shouldAttempt = OcrRotationCorrector.shouldAttemptCorrection(
+            rotationCandidate = rotationCandidate,
+            elementCount = elementCount,
+            charCount = charCount
+        )
+        if (!shouldAttempt) {
+            return originalResult
+        }
+
+        val correctionDegrees = OcrRotationCorrector.resolveCandidateDegrees(rotationCandidate)
+        val rotatedResult = try {
+            // ソースごとに「1回目の認識と同じ向きのBitmap」を作り、そこに補正候補の回転を加える。
+            // Capture はカメラの向き補正 + 紙面の回転補正候補をまとめて1枚のBitmapに適用する。
+            val (rawBitmap, totalDegrees) = when (source) {
+                is OcrSource.Capture -> ImageRotationUtils.toBitmap(source.imageProxy) to
+                    (source.imageProxy.imageInfo.rotationDegrees + correctionDegrees)
+                is OcrSource.ImportedBitmap -> source.bitmap to correctionDegrees
+                is OcrSource.ImportedFile -> ImageRotationUtils.decodeBitmap(
+                    requireContext(), source.uri
+                ) to correctionDegrees
+            }
+            val correctedBitmap = ImageRotationUtils.rotate(rawBitmap, totalDegrees)
+            textRecognizer.process(InputImage.fromBitmap(correctedBitmap, 0)).await()
+        } catch (e: Exception) {
+            Log.e(TAG, "回転補正のための再認識に失敗しました", e)
+            null
+        } ?: return originalResult
+
+        val rotatedLineCount = rotatedResult.textBlocks.sumOf { it.lines.size }
+        val originalLineCount = originalResult.textBlocks.sumOf { it.lines.size }
+        val rotatedCharCount = rotatedResult.text.trim().length
+
+        val adoptRotated = OcrRotationCorrector.shouldAdoptRotated(
+            originalCharCount = charCount,
+            originalLineCount = originalLineCount,
+            rotatedCharCount = rotatedCharCount,
+            rotatedLineCount = rotatedLineCount
+        )
+
+        return if (adoptRotated) rotatedResult else originalResult
     }
 
     private fun navigateToOcrResult(cells: List<OcrCell>, ocrError: OcrAnalyzer.OcrError) {
