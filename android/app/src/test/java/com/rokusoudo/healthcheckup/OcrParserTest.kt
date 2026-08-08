@@ -132,6 +132,115 @@ class OcrParserTest {
         )
     }
 
+    // ------------------------------------------------------------
+    // ヘッダー行の除外・検査日抽出（Issue #13）
+    // ------------------------------------------------------------
+
+    @Test
+    fun `西暦のヘッダー行は項目データとして抽出されず検査日として取得される`() {
+        // ヘッダー行: 項目名列は空、今回列z=1が2025/8/22、前回列z=2が2024/9/4、前々回列z=3が2023/4/5
+        val cells = listOf(
+            cell("2025/8/22", 200, 0, 260, 40),
+            cell("2024/9/4", 320, 0, 380, 40),
+            cell("2023/4/5", 440, 0, 500, 40),
+            cell("HbA1c", 0, 100, 100, 140),
+            cell("5.6", 200, 100, 240, 140),
+            cell("5.4", 320, 100, 360, 140),
+            cell("4.6-6.2", 440, 100, 540, 140)
+        )
+
+        val result = OcrParser.parseWithDate(cells)
+
+        assertEquals(listOf(OcrItem("HbA1c", "5.6", "")), result.items)
+        assertEquals("2025-08-22", result.examDate)
+
+        // 後方互換の parse() でも日付ヘッダー行は項目データに含まれない
+        assertEquals(listOf(OcrItem("HbA1c", "5.6", "")), OcrParser.parse(cells))
+    }
+
+    @Test
+    fun `和暦のヘッダー行から検査日が西暦に変換されて取得される`() {
+        // ヘッダー行: 今回列が R6.9.4（令和6年9月4日）、前回列が R7.8.22
+        val cells = listOf(
+            cell("R6.9.4", 200, 0, 260, 40),
+            cell("R7.8.22", 320, 0, 380, 40),
+            cell("体重", 0, 100, 100, 140),
+            cell("68.5", 200, 100, 240, 140),
+            cell("70.2", 320, 100, 380, 140)
+        )
+
+        val result = OcrParser.parseWithDate(cells)
+
+        assertEquals(listOf(OcrItem("体重", "68.5", "")), result.items)
+        assertEquals("2024-09-04", result.examDate)
+    }
+
+    @Test
+    fun `区切り文字がハイフンの検査日ヘッダー行も判定・変換される`() {
+        val cells = listOf(
+            cell("2025-08-22", 200, 0, 260, 40),
+            cell("2024-09-04", 320, 0, 380, 40),
+            cell("身長", 0, 100, 100, 140),
+            cell("172.5", 200, 100, 240, 140),
+            cell("171.0", 320, 100, 380, 140)
+        )
+
+        val result = OcrParser.parseWithDate(cells)
+
+        assertEquals(listOf(OcrItem("身長", "172.5", "")), result.items)
+        assertEquals("2025-08-22", result.examDate)
+    }
+
+    @Test
+    fun `検査日が取得できないヘッダー行なしの画像ではexamDateはnullで手動入力に委ねる`() {
+        val cells = listOf(
+            cell("HbA1c", 0, 0, 100, 40),
+            cell("5.6", 200, 0, 240, 40)
+        )
+
+        val result = OcrParser.parseWithDate(cells)
+
+        assertEquals(listOf(OcrItem("HbA1c", "5.6", "")), result.items)
+        assertEquals(null, result.examDate)
+    }
+
+    @Test
+    fun `単一セルのみが日付に見えるデータ行はヘッダー行と誤判定されず値として保持される`() {
+        // 「12/3/4」は西暦2桁パターンに偶然マッチしうるが、行内で日付らしいセルは1つだけなので
+        // ヘッダー行とは判定されず、データ行として通常どおり抽出される。
+        val headerCells = listOf(
+            cell("2025/8/22", 200, 0, 260, 40),
+            cell("2024/9/4", 320, 0, 380, 40)
+        )
+        val borderlineDataRow = listOf(
+            cell("血液型比", 0, 100, 100, 140),
+            cell("12/3/4", 200, 100, 260, 140),
+            cell("98", 320, 100, 360, 140)
+        )
+        val cells = headerCells + borderlineDataRow
+
+        val result = OcrParser.parseWithDate(cells)
+
+        assertEquals(listOf(OcrItem("血液型比", "12/3/4", "")), result.items)
+        assertEquals("2025-08-22", result.examDate)
+    }
+
+    @Test
+    fun `数値のみが並ぶデータ行はヘッダー行と誤判定されない`() {
+        // 血圧のような「今回/前回」に数値が並ぶだけの行が、日付ヘッダー行として
+        // 誤って除外されないことを確認する。
+        val cells = listOf(
+            cell("血圧(収縮期)", 0, 0, 150, 40),
+            cell("120", 200, 0, 240, 40),
+            cell("118", 320, 0, 360, 40)
+        )
+
+        val result = OcrParser.parseWithDate(cells)
+
+        assertEquals(listOf(OcrItem("血圧(収縮期)", "120", "")), result.items)
+        assertEquals(null, result.examDate)
+    }
+
     @Test
     fun `複数ページのセルはページごとに独立してクラスタリングされ結果は連結される`() {
         // 1枚目・2枚目は座標系が独立しているため、pageが異なれば座標が重なっていても

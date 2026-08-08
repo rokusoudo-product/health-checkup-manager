@@ -35,6 +35,10 @@ class OcrResultFragment : Fragment() {
     private val args: OcrResultFragmentArgs by navArgs()
     private lateinit var ocrItemAdapter: OcrItemAdapter
 
+    // Issue #13: ヘッダー行（検査日が並ぶ行）から取得できた検査日。
+    // 取得できた場合は検査日入力ダイアログの初期値として使用する。取得できなければnull（従来どおり手動入力）。
+    private var detectedExamDate: String? = null
+
     private val viewModel: OcrResultViewModel by viewModels {
         val app = requireActivity().application as HealthCheckupApp
         OcrResultViewModel.Factory(app, app.repository)
@@ -93,7 +97,9 @@ class OcrResultFragment : Fragment() {
     }
 
     private fun setupRecyclerView(cells: List<OcrCell>) {
-        val items = OcrParser.parse(cells).toMutableList()
+        val parseResult = OcrParser.parseWithDate(cells)
+        detectedExamDate = parseResult.examDate
+        val items = parseResult.items.toMutableList()
         ocrItemAdapter = OcrItemAdapter(items)
 
         binding.recyclerOcrItems.apply {
@@ -115,6 +121,14 @@ class OcrResultFragment : Fragment() {
 
     private fun showDatePickerDialog() {
         val calendar = Calendar.getInstance()
+        // Issue #13: ヘッダー行から検査日が取得できていれば、検査日入力ダイアログの初期値に反映する。
+        // 取得できていない場合は従来どおり今日の日付が初期値になり、ユーザーが手動で選択する。
+        detectedExamDate?.let { dateString ->
+            runCatching {
+                val (year, month, day) = dateString.split("-").map { it.toInt() }
+                calendar.set(year, month - 1, day)
+            }
+        }
         DatePickerDialog(
             requireContext(),
             { _, year, month, dayOfMonth ->
