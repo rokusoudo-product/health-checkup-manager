@@ -92,14 +92,61 @@ class OcrResultFragment : Fragment() {
         }
     }
 
-    private fun setupRecyclerView(cells: List<OcrCell>) {
-        val items = OcrParser.parse(cells).toMutableList()
-        ocrItemAdapter = OcrItemAdapter(items)
+    // Issue #14: 複数列の健診表（今回/前回/前々回）から「今回」列を特定するための
+    // グリッド。列選択ダイアログでユーザーが選んだ列から項目リストを再構築する際に使う。
+    private var ocrGrid: List<List<String>> = emptyList()
 
+    private fun setupRecyclerView(cells: List<OcrCell>) {
+        ocrGrid = OcrParser.buildGrid(cells)
+        when (val selection = OcrColumnSelector.selectValueColumn(ocrGrid)) {
+            is ColumnSelectionResult.Resolved -> {
+                bindItems(OcrColumnSelector.rebuildItems(ocrGrid, selection.valueColumnIndex))
+            }
+            is ColumnSelectionResult.NeedsUserSelection -> {
+                // 自動判定に失敗した場合は空のプレースホルダーを表示しつつ、
+                // 列選択ダイアログで選ばれた列の値でリストを再構築する。
+                bindItems(listOf(OcrItem("", "", "")))
+                showColumnSelectionDialog(selection.candidates)
+            }
+        }
+    }
+
+    private fun bindItems(items: List<OcrItem>) {
+        ocrItemAdapter = OcrItemAdapter(items.toMutableList())
         binding.recyclerOcrItems.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = ocrItemAdapter
         }
+    }
+
+    /**
+     * 複数列の健診表で「今回」列を自動判定できなかった場合に表示する列選択ダイアログ。
+     * 各候補列のヘッダーラベルとプレビュー値（先頭数項目）を提示し、ユーザーが選んだ列で
+     * 項目リストを再構築する（Issue #14 受け入れ基準）。
+     */
+    private fun showColumnSelectionDialog(candidates: List<ColumnCandidate>) {
+        val labels = candidates.mapIndexed { index, candidate ->
+            val headerPart = candidate.headerLabel.ifBlank {
+                getString(R.string.label_column_fallback, index + 1)
+            }
+            val previewPart = if (candidate.previewValues.isEmpty()) {
+                getString(R.string.label_column_no_preview)
+            } else {
+                candidate.previewValues.joinToString("、")
+            }
+            getString(R.string.label_column_item, headerPart, previewPart)
+        }.toTypedArray()
+
+        var selectedIndex = 0
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle(getString(R.string.dialog_title_column_selection))
+            .setSingleChoiceItems(labels, selectedIndex) { _, which -> selectedIndex = which }
+            .setPositiveButton(getString(R.string.btn_select_column)) { _, _ ->
+                val chosenColumn = candidates[selectedIndex].columnIndex
+                bindItems(OcrColumnSelector.rebuildItems(ocrGrid, chosenColumn))
+            }
+            .setNegativeButton(getString(R.string.btn_cancel), null)
+            .show()
     }
 
     private fun setupSaveButton() {
