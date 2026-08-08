@@ -1,11 +1,15 @@
 package com.rokusoudo.healthcheckup
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.ImageDecoder
 import android.graphics.ImageFormat
 import android.graphics.Matrix
 import android.graphics.Rect
 import android.graphics.YuvImage
+import android.net.Uri
+import android.os.Build
 import androidx.camera.core.ImageProxy
 import java.io.ByteArrayOutputStream
 
@@ -48,6 +52,29 @@ object ImageRotationUtils {
         yuvImage.compressToJpeg(Rect(0, 0, image.width, image.height), JPEG_QUALITY, out)
         val jpegBytes = out.toByteArray()
         return BitmapFactory.decodeByteArray(jpegBytes, 0, jpegBytes.size)
+    }
+
+    /**
+     * 画像ファイルの [Uri] を [Bitmap] にデコードする。回転補正の再認識用。
+     *
+     * API 28+ では ImageDecoder を使い、EXIFの向き補正を反映した状態でデコードする
+     * （1回目の認識に使う `InputImage.fromFilePath` と同じ向きになる）。
+     * API 26-27 では BitmapFactory によるデコードのためEXIFの向きは反映されないが、
+     * その場合も再認識結果は [OcrRotationCorrector.shouldAdoptRotated] で元の結果と
+     * 比較されるため、補正が効かないだけで結果が悪化することはない。
+     */
+    fun decodeBitmap(context: Context, uri: Uri): Bitmap {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri)) { decoder, _, _ ->
+                // ML Kitに渡すため、HARDWAREではなくソフトウェアBitmapとしてデコードする
+                decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+            }
+        } else {
+            context.contentResolver.openInputStream(uri).use { stream ->
+                BitmapFactory.decodeStream(stream)
+                    ?: throw IllegalStateException("画像のデコードに失敗しました: $uri")
+            }
+        }
     }
 
     /**
