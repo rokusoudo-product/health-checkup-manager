@@ -4,11 +4,13 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.rokusoudo.healthcheckup.ItemMasterMatcher
 import com.rokusoudo.healthcheckup.OcrItem
 import com.rokusoudo.healthcheckup.data.repository.HealthRepository
 import com.rokusoudo.healthcheckup.ui.notification.NotificationHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /** 保存処理の状態 */
@@ -26,6 +28,22 @@ class OcrResultViewModel(
 
     private val _saveState = MutableStateFlow<SaveState>(SaveState.Idle)
     val saveState: StateFlow<SaveState> = _saveState
+
+    // Issue #15: OCR抽出結果を項目マスタに照合した結果。未実行の間はnull。
+    private val _masterMatchResult = MutableStateFlow<ItemMasterMatcher.MatchResult?>(null)
+    val masterMatchResult: StateFlow<ItemMasterMatcher.MatchResult?> = _masterMatchResult
+
+    /**
+     * OCR抽出結果を項目マスタ（[HealthRepository.getAllMasters]）に照合する（Issue #15）。
+     * 照合ロジック自体は [ItemMasterMatcher] に切り出しており、ここではマスタ取得と
+     * 結果の反映のみを担う。
+     */
+    fun matchItemsAgainstMaster(items: List<OcrItem>) {
+        viewModelScope.launch {
+            val masters = repository.getAllMasters().first()
+            _masterMatchResult.value = ItemMasterMatcher.match(items, masters)
+        }
+    }
 
     fun saveRecord(date: String, facility: String, items: List<OcrItem>) {
         viewModelScope.launch {

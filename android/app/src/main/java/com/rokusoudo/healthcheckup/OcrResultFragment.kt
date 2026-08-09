@@ -77,6 +77,7 @@ class OcrResultFragment : Fragment() {
         setupRecyclerView(cells)
         setupSaveButton()
         observeSaveState()
+        observeMasterMatchResult()
     }
 
     private fun setupErrorMessage(errorType: OcrAnalyzer.OcrError) {
@@ -105,6 +106,33 @@ class OcrResultFragment : Fragment() {
         binding.recyclerOcrItems.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = ocrItemAdapter
+        }
+
+        // Issue #15: 項目マスタとの照合（非同期）を開始する。結果は observeMasterMatchResult で反映する。
+        viewModel.matchItemsAgainstMaster(parseResult.items)
+    }
+
+    /**
+     * 項目マスタ照合結果（Issue #15）を反映する。
+     * 照合済みの項目名・単位でRecyclerViewを更新し、除外した行数を確認画面に表示する。
+     */
+    private fun observeMasterMatchResult() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.masterMatchResult.collect { result ->
+                    if (result == null) return@collect
+
+                    ocrItemAdapter.submitItems(result.items)
+
+                    if (result.excludedCount > 0) {
+                        binding.tvExcludedCount.text =
+                            getString(R.string.msg_items_excluded, result.excludedCount)
+                        binding.tvExcludedCount.visibility = View.VISIBLE
+                    } else {
+                        binding.tvExcludedCount.visibility = View.GONE
+                    }
+                }
+            }
         }
     }
 
