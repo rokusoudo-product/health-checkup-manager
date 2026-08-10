@@ -27,6 +27,9 @@
     <string name="msg_save_success">保存しました</string>
     <string name="msg_save_error">保存に失敗しました: %s</string>
 
+    <!-- Issue #15: 項目マスタに該当しない行を除外した件数の表示 -->
+    <string name="msg_items_excluded">マスタに該当しない%d行を除外しました</string>
+
     <!-- OCR error messages (薬事法対応: 医療アドバイスなし) -->
     <string name="error_insufficient_text">読み取りに失敗しました。手動で入力してください</string>
     <string name="error_low_confidence">もう少し近づけて撮影してください</string>
