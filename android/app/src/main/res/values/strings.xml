@@ -35,6 +35,13 @@
     <string name="error_low_confidence">もう少し近づけて撮影してください</string>
     <string name="error_ocr_failed">OCR処理中にエラーが発生しました</string>
 
+    <!-- OCR result screen: 列選択 (Issue #14) -->
+    <string name="dialog_title_column_selection">取り込む列を選択してください（今回の列を自動判定できませんでした）</string>
+    <string name="btn_select_column">この列を選択</string>
+    <string name="label_column_fallback">列%1$d</string>
+    <string name="label_column_item">%1$s: %2$s</string>
+    <string name="label_column_no_preview">（プレビューなし）</string>
+
     <!-- S-02 Home hub (刷新001) -->
     <string name="title_home">ホーム</string>
     <string name="btn_home_register">登録</string>
