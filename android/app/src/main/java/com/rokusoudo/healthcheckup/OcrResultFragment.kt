@@ -35,6 +35,10 @@ class OcrResultFragment : Fragment() {
     private val args: OcrResultFragmentArgs by navArgs()
     private lateinit var ocrItemAdapter: OcrItemAdapter
 
+    // Issue #13: ヘッダー行（検査日が並ぶ行）から取得できた検査日。
+    // 取得できた場合は検査日入力ダイアログの初期値として使用する。取得できなければnull（従来どおり手動入力）。
+    private var detectedExamDate: String? = null
+
     private val viewModel: OcrResultViewModel by viewModels {
         val app = requireActivity().application as HealthCheckupApp
         OcrResultViewModel.Factory(app, app.repository)
@@ -73,6 +77,7 @@ class OcrResultFragment : Fragment() {
         setupRecyclerView(cells)
         setupSaveButton()
         observeSaveState()
+        observeMasterMatchResult()
     }
 
     private fun setupErrorMessage(errorType: OcrAnalyzer.OcrError) {
@@ -97,6 +102,10 @@ class OcrResultFragment : Fragment() {
     private var ocrGrid: List<List<String>> = emptyList()
 
     private fun setupRecyclerView(cells: List<OcrCell>) {
+        // Issue #13: ヘッダー行から取得した検査日を、検査日入力ダイアログの初期値に使う。
+        detectedExamDate = OcrParser.parseWithDate(cells).examDate
+
+        // Issue #14: グリッドを復元し「今回」列を判定する。
         ocrGrid = OcrParser.buildGrid(cells)
         when (val selection = OcrColumnSelector.selectValueColumn(ocrGrid)) {
             is ColumnSelectionResult.Resolved -> {
@@ -105,17 +114,48 @@ class OcrResultFragment : Fragment() {
             is ColumnSelectionResult.NeedsUserSelection -> {
                 // 自動判定に失敗した場合は空のプレースホルダーを表示しつつ、
                 // 列選択ダイアログで選ばれた列の値でリストを再構築する。
-                bindItems(listOf(OcrItem("", "", "")))
+                // プレースホルダーはマスタ照合（Issue #15）の対象にしない。
+                bindItems(listOf(OcrItem("", "", "")), matchAgainstMaster = false)
                 showColumnSelectionDialog(selection.candidates)
             }
         }
     }
 
-    private fun bindItems(items: List<OcrItem>) {
+    private fun bindItems(items: List<OcrItem>, matchAgainstMaster: Boolean = true) {
         ocrItemAdapter = OcrItemAdapter(items.toMutableList())
         binding.recyclerOcrItems.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = ocrItemAdapter
+        }
+
+        // Issue #15: 項目マスタとの照合（非同期）を開始する。結果は observeMasterMatchResult で反映する。
+        // 列選択待ちのプレースホルダーでは呼ばない（列が確定してから、その列の値で照合する）。
+        if (matchAgainstMaster) {
+            viewModel.matchItemsAgainstMaster(items)
+        }
+    }
+
+    /**
+     * 項目マスタ照合結果（Issue #15）を反映する。
+     * 照合済みの項目名・単位でRecyclerViewを更新し、除外した行数を確認画面に表示する。
+     */
+    private fun observeMasterMatchResult() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.masterMatchResult.collect { result ->
+                    if (result == null) return@collect
+
+                    ocrItemAdapter.submitItems(result.items)
+
+                    if (result.excludedCount > 0) {
+                        binding.tvExcludedCount.text =
+                            getString(R.string.msg_items_excluded, result.excludedCount)
+                        binding.tvExcludedCount.visibility = View.VISIBLE
+                    } else {
+                        binding.tvExcludedCount.visibility = View.GONE
+                    }
+                }
+            }
         }
     }
 
@@ -162,6 +202,14 @@ class OcrResultFragment : Fragment() {
 
     private fun showDatePickerDialog() {
         val calendar = Calendar.getInstance()
+        // Issue #13: ヘッダー行から検査日が取得できていれば、検査日入力ダイアログの初期値に反映する。
+        // 取得できていない場合は従来どおり今日の日付が初期値になり、ユーザーが手動で選択する。
+        detectedExamDate?.let { dateString ->
+            runCatching {
+                val (year, month, day) = dateString.split("-").map { it.toInt() }
+                calendar.set(year, month - 1, day)
+            }
+        }
         DatePickerDialog(
             requireContext(),
             { _, year, month, dayOfMonth ->

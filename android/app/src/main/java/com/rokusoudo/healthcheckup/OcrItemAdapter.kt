@@ -75,4 +75,15 @@ class OcrItemAdapter(
 
     /** 編集済み内容を含む全アイテムを返す。TextWatcher により items は常に最新状態。 */
     fun getItems(): List<OcrItem> = items.toList()
+
+    /**
+     * 表示中の全アイテムを [newItems] で置き換える（Issue #15: 項目マスタ照合結果の反映）。
+     * 照合は非同期（DBアクセス）のため、初期表示後に確定したマスタ照合済みのリストへ
+     * 差し替えるために使用する。
+     */
+    fun submitItems(newItems: List<OcrItem>) {
+        items.clear()
+        items.addAll(newItems)
+        notifyDataSetChanged()
+    }
 }
