@@ -5,12 +5,14 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupWithNavController
 import com.google.firebase.auth.FirebaseAuth
 import com.rokusoudo.healthcheckup.databinding.ActivityMainBinding
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
@@ -49,6 +51,20 @@ class MainActivity : AppCompatActivity() {
             setOf(R.id.homeFragment, R.id.loginFragment)
         )
         binding.toolbar.setupWithNavController(navController, appBarConfiguration)
+
+        resyncWithFirestoreOnStartup()
+    }
+
+    /**
+     * Issue #26: ログイン済み状態でアプリを起動した際、Firestoreとの再同期をバックグラウンドで行う。
+     * 未ログインの場合や、多重実行の抑止は HealthRepository.resyncOnStartupIfNeeded() 側で判定する。
+     * UIをブロックしないよう lifecycleScope から呼び出す。
+     */
+    private fun resyncWithFirestoreOnStartup() {
+        val app = application as HealthCheckupApp
+        lifecycleScope.launch {
+            app.repository.resyncOnStartupIfNeeded()
+        }
     }
 
     override fun onSupportNavigateUp(): Boolean {
