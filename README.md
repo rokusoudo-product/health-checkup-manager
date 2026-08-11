@@ -100,6 +100,18 @@ See [docs/](docs/) for architecture design and backlog, and [specs/001-screen-fl
 
 ## Testing
 
+### Web CI (type check, lint & build)
+
+`web/` is validated in CI by [`.github/workflows/web-ci.yml`](.github/workflows/web-ci.yml) on every push to `main` and every pull request. It installs dependencies, then runs lint and the production build (which includes the TypeScript type check via `tsc -b`).
+
+To run the same checks locally:
+
+```bash
+npm ci --prefix web
+npm --prefix web run lint
+npm --prefix web run build
+```
+
 ### Firestore rules unit tests
 
 `firestore.rules` is covered by unit tests (`firestore-tests/rules.test.mjs`) that run against the Firebase Emulator. These are enforced in CI by [`.github/workflows/firestore-rules-test.yml`](.github/workflows/firestore-rules-test.yml) on any push/PR touching `firestore.rules` or `firestore-tests/**`.
