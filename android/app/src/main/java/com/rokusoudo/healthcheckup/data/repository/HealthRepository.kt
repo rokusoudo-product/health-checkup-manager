@@ -8,6 +8,7 @@ import com.rokusoudo.healthcheckup.data.db.dao.ItemTrend
 import com.rokusoudo.healthcheckup.data.db.entity.ExaminationItem
 import com.rokusoudo.healthcheckup.data.db.entity.ExaminationRecord
 import com.rokusoudo.healthcheckup.data.db.entity.ItemMaster
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -23,6 +24,9 @@ class HealthRepository(
     private val firestoreRepository: HealthCloudSync,
     private val currentUidProvider: () -> String? = { FirebaseAuth.getInstance().currentUser?.uid }
 ) {
+
+    /** Issue #26: アプリ起動時の再同期が既に実行された（または実行中）かどうか。1起動＝1インスタンス分に限り一度だけ true になる。 */
+    private val startupResyncAttempted = AtomicBoolean(false)
 
     /**
      * OCR結果・手動入力を診断記録として保存する。
@@ -169,6 +173,29 @@ class HealthRepository(
         } catch (_: Exception) {
             // ネットワーク不可時は無視（既存のローカルデータをそのまま使用）
         }
+    }
+
+    /**
+     * Issue #26: ログイン済み状態でアプリを起動したとき、Firestoreとの再同期を行う。
+     *
+     * `LoginViewModel.signIn()` はサインイン直後の初回復元のみをカバーしており、
+     * 既にログイン済みのユーザーがアプリを再起動した場合は `restoreFromFirestore` が
+     * 一度も呼ばれず、Web側で追加・編集した記録がAndroidに反映されなかった（US-S01未達）。
+     *
+     * - 未ログイン（uidが取れない）場合は何もしない。
+     * - 1つの HealthRepository インスタンス（＝アプリプロセスの1起動）につき、
+     *   実際の同期処理は最初の1回のみ実行する（`startupResyncAttempted` による多重実行防止）。
+     *   同じインスタンスに対して複数回呼び出しても2回目以降は即座に返る（冪等）。
+     * - Firestore例外・オフライン時のフォールバックは `restoreFromFirestore` に委譲する
+     *   （既存のローカルデータを保持し、クラッシュしない）。
+     *
+     * 呼び出し元（例: MainActivity.onCreate）は UI をブロックしないよう
+     * `lifecycleScope.launch` 等のバックグラウンドコルーチンから呼び出すこと。
+     */
+    suspend fun resyncOnStartupIfNeeded() {
+        if (!startupResyncAttempted.compareAndSet(false, true)) return
+        val uid = currentUidProvider() ?: return
+        restoreFromFirestore(uid)
     }
 
     companion object {

@@ -30,6 +30,16 @@
 
 - **Cloud Firestore** を単一の真実の源（Single Source of Truth）とする
 - **Android**: Room をオフラインキャッシュとして保持し、Firestore と双方向同期
+  - push（Room→Firestore）: 記録保存時（`saveRecord`）・項目マスター更新時（`upsertMaster`）に都度実行
+  - pull（Firestore→Room）: 次の2箇所から `HealthRepository.restoreFromFirestore(uid)` を呼び出す
+    - サインイン成功直後（`LoginViewModel.signIn()`）: 初回ログイン時、他端末のデータを取り込む
+    - アプリ起動時（`MainActivity.onCreate()` → `HealthRepository.resyncOnStartupIfNeeded()`、Issue #26）:
+      既にログイン済みのユーザーがアプリを再起動した場合、Web側で追加・編集された記録を反映する。
+      `lifecycleScope` 上のバックグラウンドコルーチンから呼び出し、UIをブロックしない。
+      未ログイン時は何もせず、`HealthRepository` インスタンスあたり（＝1起動あたり）実際の同期は1回のみに制限する（多重実行防止）。
+      Firestore例外・オフライン時は無視し、既存のローカルデータをそのまま使用する。
+      なお `restoreFromFirestore` は upsert のみで、Firestore側に存在しない記録をRoomから削除しない
+      （Web側で削除した記録の反映は本Issueのスコープ外・別Issueで対応）。
 - **Web**: Firestore を直接参照（ローカルキャッシュ不要、MVP段階）
 - **認証**: 両プラットフォームとも Firebase Auth（同一プロジェクト）でユーザーIDを共有
 - **データ分離**: Firestoreのパス `users/{uid}/records/{recordId}` でユーザーごとに分離
@@ -79,7 +89,7 @@ flowchart TB
     U2 --> HOST --> WUI
     UI -->|認証| AUTH
     WUI -->|認証| AUTH
-    REPO -->|同期（保存時 push / 初回ログイン時 pull）| FS
+    REPO -->|同期（保存時 push / ログイン時・アプリ起動時 pull）| FS
     WUI <--> FS
     UI -->|ACTION_SENDTO| MAIL
 ```
