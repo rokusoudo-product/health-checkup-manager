@@ -400,6 +400,57 @@ h2 {
   box-sizing: border-box;
 }
 
+/* ── 経年グラフ ──────────────────────────────────────── */
+
+.trend-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.trend-item-select {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--bg);
+  color: var(--text-h);
+  min-width: 200px;
+}
+
+.trend-period-tabs {
+  display: flex;
+  gap: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.trend-tab {
+  background: transparent;
+  border: 1.5px solid transparent;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+/* アクティブ状態は primary トークンの文字色＋枠線で表現し、白文字とのコントラスト計算不要にする */
+.trend-tab.active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.trend-chart-wrap {
+  position: relative;
+  height: 360px;
+  width: 100%;
+}
+
 /* ── 共通 ──────────────────────────────────────────── */
 
 .msg { color: var(--text); font-size: 15px; padding: 20px 0; }

@@ -5,7 +5,7 @@
 
 ## 基本方針
 
-- 対象プラットフォーム: Android（min API 26）。Web 版は本書のトークンを参照するが今回の刷新対象外
+- 対象プラットフォーム: Android（min API 26）。Web 版は本書のトークンを参照するが今回の刷新対象外（2026-08-12 追記: Web の経年グラフ画面【Issue #28】以降に追加する Web 新規画面には、下記「Web 版トークン適用方針」を適用する。既存の Web 4画面 `RecordList` / `RecordDetail` / `RecordForm` / `ItemMasters` はカラーコード直書きのまま残っており、本追記の対象外・別タスクでの是正待ち）
 - 準拠ガイドライン: Material Design 3
 - 使用コンポーネントライブラリ: Material Components for Android（XML/View ベース）
 - トーン&マナー: 落ち着いた健康管理ツール。医療データを扱うため誇張のない誠実な配色
@@ -67,6 +67,24 @@
 | S-06a カメラ読み取り | 撮影→OCR確認・補正 | 撮影 / この内容で登録 | ローディング: OCR処理中表示必須 |
 | S-06b 手入力フォーム | 数値入力 | 登録する | エラー: 数値バリデーション |
 | S-07 お問い合わせ | サポート連絡 | 送信（メーラー起動） | エラー: メーラー不在時の案内 |
+
+## Web 版トークン適用方針（2026-08-12 追記, Issue #28）
+
+Web（`web/`）で新規に追加する画面は、Android と同じ意味のトークンを CSS カスタムプロパティとして参照する。カラーコードの直書きは禁止。
+
+- 定義場所: `web/src/index.css` の `:root`（ライト）と `@media (prefers-color-scheme: dark)` 内（ダーク）
+- 命名: `--color-<トークン名>`（Android のトークン表と同じ名前を使う）
+- 現時点で定義済みのトークン（本 Issue で追加）:
+
+| CSS変数 | トークン | ライト | ダーク | 用途 |
+|--------|---------|-------|-------|------|
+| `--color-primary` | primary | #00696C | #4DD8DC | グラフの主線・アクティブなタブなど主要アクション相当 |
+| `--color-error` | error | #BA1A1A | #FFB4AB | 基準値の上限・下限を示す参照線 |
+
+- 通常の CSS（`color` / `background` 等）では `var(--color-primary)` のようにそのまま参照する
+- **Canvas 描画（Chart.js 等）では `var()` がブラウザの Canvas 2D API 上で解決されないため**、`getComputedStyle(document.documentElement).getPropertyValue('--color-primary')` で実測値の文字列を取得してから渡す（`web/src/components/TrendChart.tsx` 参照）
+- 新規トークンが必要になったら、この表と Android 側のカラートークン表の両方に追記し、値を一致させる
+- 既存 4 画面（`RecordList` / `RecordDetail` / `RecordForm` / `ItemMasters`）の直書きカラーコードは本追記の対象外。是正は別タスクで行う
 
 ## プロジェクト固有ルール
 
