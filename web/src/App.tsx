@@ -7,6 +7,7 @@ import RecordList from './pages/RecordList'
 import RecordDetail from './pages/RecordDetail'
 import RecordForm from './pages/RecordForm'
 import ItemMasters from './pages/ItemMasters'
+import TrendGraph from './pages/TrendGraph'
 import './App.css'
 
 function LoginPage() {
@@ -49,6 +50,9 @@ function Layout({ user, children }: { user: User; children: React.ReactNode }) {
           <NavLink to="/masters" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
             項目マスター
           </NavLink>
+          <NavLink to="/trends" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+            経年グラフ
+          </NavLink>
         </div>
         <div className="nav-user">
           {user.photoURL && <img src={user.photoURL} alt="" className="nav-avatar" />}
@@ -86,6 +90,7 @@ export default function App() {
           <Route path="/records/new" element={<RecordForm uid={user.uid} />} />
           <Route path="/records/:id" element={<RecordDetail uid={user.uid} />} />
           <Route path="/masters" element={<ItemMasters uid={user.uid} />} />
+          <Route path="/trends" element={<TrendGraph uid={user.uid} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>

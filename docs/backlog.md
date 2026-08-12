@@ -134,7 +134,7 @@
 
 | チケット | タスク | 担当 | ステータス |
 |---------|--------|------|-----------|
-| T-601 | 経年グラフ（Chart.js） | engineer | 未着手 |
+| T-601 | 経年グラフ（Chart.js） | engineer | 🔍 レビュー待ち（Issue #28, PR #42） |
 | T-602 | 基準値外一覧画面 | engineer | 未着手 |
 | T-603 | Firebase Hostingデプロイ設定 | engineer | 未着手 |
 | T-604 | Firestoreセキュリティルール最終確認 | engineer | 未着手 |
