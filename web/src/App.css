@@ -451,6 +451,38 @@ h2 {
   width: 100%;
 }
 
+/* ── 基準値外一覧（Issue #33 / T-602）───────────────────
+   Web版トークン適用方針（DESIGN.md, Issue #28 以降）に従い、
+   カラーコードは直書きせず var(--color-*) / 共通サイトトークンのみを参照する。 */
+
+.abnormal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.abnormal-table th {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--border);
+  color: var(--text);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.abnormal-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-h);
+}
+.abnormal-table .val { font-weight: 700; color: var(--color-error); }
+.abnormal-table .ref { color: var(--text); font-size: 13px; }
+
+.abnormal-row { cursor: pointer; }
+.abnormal-row:hover,
+.abnormal-row:focus-visible {
+  background: var(--border);
+  outline: none;
+}
+
 /* ── 共通 ──────────────────────────────────────────── */
 
 .msg { color: var(--text); font-size: 15px; padding: 20px 0; }

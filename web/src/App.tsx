@@ -8,6 +8,7 @@ import RecordDetail from './pages/RecordDetail'
 import RecordForm from './pages/RecordForm'
 import ItemMasters from './pages/ItemMasters'
 import TrendGraph from './pages/TrendGraph'
+import AbnormalList from './pages/AbnormalList'
 import './App.css'
 
 function LoginPage() {
@@ -53,6 +54,9 @@ function Layout({ user, children }: { user: User; children: React.ReactNode }) {
           <NavLink to="/trends" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
             経年グラフ
           </NavLink>
+          <NavLink to="/abnormal" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+            基準値外一覧
+          </NavLink>
         </div>
         <div className="nav-user">
           {user.photoURL && <img src={user.photoURL} alt="" className="nav-avatar" />}
@@ -91,6 +95,7 @@ export default function App() {
           <Route path="/records/:id" element={<RecordDetail uid={user.uid} />} />
           <Route path="/masters" element={<ItemMasters uid={user.uid} />} />
           <Route path="/trends" element={<TrendGraph uid={user.uid} />} />
+          <Route path="/abnormal" element={<AbnormalList uid={user.uid} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
