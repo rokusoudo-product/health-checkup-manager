@@ -23,4 +23,10 @@
         android:title="@string/menu_sign_out"
         app:showAsAction="never" />
 
+    <!-- Issue #34: サインアウトと同じ階層にアカウント削除導線を配置 -->
+    <item
+        android:id="@+id/action_delete_account"
+        android:title="@string/menu_delete_account"
+        app:showAsAction="never" />
+
 </menu>

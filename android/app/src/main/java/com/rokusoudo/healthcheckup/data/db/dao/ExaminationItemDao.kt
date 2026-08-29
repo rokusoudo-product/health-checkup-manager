@@ -59,4 +59,11 @@ interface ExaminationItemDao {
      */
     @Query("SELECT * FROM examination_items WHERE itemName = :itemName")
     suspend fun getByItemName(itemName: String): List<ExaminationItem>
+
+    /**
+     * Issue #34: アカウント削除機能用。端末内の全検査項目を削除する。
+     * （サインアウト時には呼ばれない。サインアウトでのRoom DB削除は別issue #41で対応）
+     */
+    @Query("DELETE FROM examination_items")
+    suspend fun deleteAll()
 }

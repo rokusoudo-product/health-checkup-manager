@@ -1,7 +1,9 @@
 import {
   collection, doc, getDocs, getDoc,
   setDoc, deleteDoc, serverTimestamp, query, orderBy,
+  writeBatch,
 } from 'firebase/firestore'
+import type { CollectionReference, DocumentData } from 'firebase/firestore'
 import { db } from './firebase'
 import type { ExaminationRecord, ItemMaster } from './types'
 
@@ -56,4 +58,34 @@ export async function saveMaster(uid: string, master: ItemMaster): Promise<void>
 
 export async function deleteMaster(uid: string, itemName: string): Promise<void> {
   await deleteDoc(doc(db, 'users', uid, 'itemMasters', itemName))
+}
+
+// ── アカウント削除（Issue #34） ────────────────────────────
+
+const FIRESTORE_BATCH_LIMIT = 500
+
+/**
+ * コレクション内の全ドキュメントを削除する。
+ * WriteBatch は1回あたり最大500件までしか操作できないため、500件ごとに分割してコミットする。
+ */
+async function deleteAllDocsIn(ref: CollectionReference<DocumentData>): Promise<void> {
+  const snap = await getDocs(ref)
+  if (snap.empty) return
+  const docs = snap.docs
+  for (let i = 0; i < docs.length; i += FIRESTORE_BATCH_LIMIT) {
+    const batch = writeBatch(db)
+    for (const d of docs.slice(i, i + FIRESTORE_BATCH_LIMIT)) {
+      batch.delete(d.ref)
+    }
+    await batch.commit()
+  }
+}
+
+/**
+ * アカウント削除機能用。users/{uid} 配下の records・itemMasters コレクションの
+ * 全ドキュメントを削除する。冪等: 既にデータが無い状態で呼んでも例外を投げない。
+ */
+export async function deleteAllUserData(uid: string): Promise<void> {
+  await deleteAllDocsIn(recordsRef(uid))
+  await deleteAllDocsIn(mastersRef(uid))
 }
