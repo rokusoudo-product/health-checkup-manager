@@ -33,6 +33,14 @@ class AccountDeletionViewModel(application: Application) : AndroidViewModel(appl
     private val _uiState = MutableStateFlow<DeletionUiState>(DeletionUiState.Idle)
     val uiState: StateFlow<DeletionUiState> = _uiState.asStateFlow()
 
+    /**
+     * 直近までに分かっている削除の進捗。再認証待ちの間にGoogleサインインそのものが
+     * 失敗・キャンセルされた場合でも、既に完了済みのステップ（Firestore・Room削除）を
+     * 「未削除」と誤表示しないよう、フォールバック用に保持しておく（Issue #34 受け入れ基準:
+     * 「何が削除され何が残ったか」を正しく伝える）。
+     */
+    private var lastKnownProgress = AccountDeletionProgress()
+
     private val app = application as HealthCheckupApp
     private val manager = AccountDeletionManager(
         repository = app.repository,
@@ -58,19 +66,26 @@ class AccountDeletionViewModel(application: Application) : AndroidViewModel(appl
             try {
                 val user = FirebaseAuth.getInstance().currentUser
                 if (user == null) {
-                    _uiState.value = DeletionUiState.Error(AccountDeletionProgress(), "サインインしていません")
+                    _uiState.value = DeletionUiState.Error(lastKnownProgress, "サインインしていません")
                     return@launch
                 }
                 val credential = GoogleAuthProvider.getCredential(idToken, null)
                 user.reauthenticate(credential).await()
                 applyResult(manager.deleteAccount())
             } catch (e: Exception) {
+                // 再認証そのものが失敗・キャンセルされた場合でも、既存の進捗（lastKnownProgress）を
+                // 「未削除」で上書きしない。Firestore・Roomは再認証エラー発生前に既に削除済みのため。
                 _uiState.value = DeletionUiState.Error(
-                    AccountDeletionProgress(),
+                    lastKnownProgress,
                     e.message ?: "再認証に失敗しました"
                 )
             }
         }
+    }
+
+    /** 再認証待ちダイアログでGoogleサインインそのものが失敗・キャンセルされたときにFragmentから呼ぶ。 */
+    fun onReauthSignInFailed(message: String) {
+        _uiState.value = DeletionUiState.Error(lastKnownProgress, message)
     }
 
     fun resetState() {
@@ -80,8 +95,14 @@ class AccountDeletionViewModel(application: Application) : AndroidViewModel(appl
     private fun applyResult(result: AccountDeletionResult) {
         _uiState.value = when (result) {
             is AccountDeletionResult.Success -> DeletionUiState.Success
-            is AccountDeletionResult.ReauthRequired -> DeletionUiState.ReauthRequired(result.progress)
-            is AccountDeletionResult.Failure -> DeletionUiState.Error(result.progress, result.message)
+            is AccountDeletionResult.ReauthRequired -> {
+                lastKnownProgress = result.progress
+                DeletionUiState.ReauthRequired(result.progress)
+            }
+            is AccountDeletionResult.Failure -> {
+                lastKnownProgress = result.progress
+                DeletionUiState.Error(result.progress, result.message)
+            }
         }
     }
 }

@@ -220,6 +220,9 @@ class HomeFragment : Fragment() {
     }
 
     private fun handleReauthSignInResult(data: Intent?) {
+        // Google再サインインそのものが失敗・キャンセルされた場合でも、
+        // ここまでに完了済みの削除進捗（Firestore・Room）を「未削除」で誤上書きしないよう、
+        // ViewModel側で保持している最新の進捗を使う（onReauthSignInFailed経由）。
         try {
             val task = GoogleSignIn.getSignedInAccountFromIntent(data)
             val account = task.getResult(ApiException::class.java)
@@ -227,10 +230,10 @@ class HomeFragment : Fragment() {
             if (idToken != null) {
                 deletionViewModel.reauthenticateThenRetry(idToken)
             } else {
-                showDeletionErrorDialog(AccountDeletionProgress(), getString(R.string.msg_sign_in_failed))
+                deletionViewModel.onReauthSignInFailed(getString(R.string.msg_sign_in_failed))
             }
         } catch (e: ApiException) {
-            showDeletionErrorDialog(AccountDeletionProgress(), getString(R.string.msg_sign_in_failed))
+            deletionViewModel.onReauthSignInFailed(getString(R.string.msg_sign_in_failed))
         }
     }
 
