@@ -10,12 +10,15 @@ import android.view.ViewGroup
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.FirebaseAuth
+import com.rokusoudo.healthcheckup.HealthCheckupApp
 import com.rokusoudo.healthcheckup.R
 import com.rokusoudo.healthcheckup.databinding.FragmentHomeBinding
+import kotlinx.coroutines.launch
 
 /**
  * S-02 ホーム画面。「登録」「グラフ」「お問い合わせ」への分岐ハブ。
@@ -83,14 +86,24 @@ class HomeFragment : Fragment() {
         }, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
+    /**
+     * Issue #41: サインアウト時、共用端末に前の利用者の健診データが残らないよう
+     * 端末の Room DB もあわせて消去する（削除確認ダイアログ等は不要。既存UXは変えない）。
+     * Room クリアは suspend 処理のため、ライフサイクルに紐づくコルーチンから呼び出す。
+     */
     private fun signOut() {
-        // Firebase Auth からサインアウト
-        FirebaseAuth.getInstance().signOut()
-        // Google Sign-In のキャッシュもクリア
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).build()
-        GoogleSignIn.getClient(requireActivity(), gso).signOut()
-        // ログイン画面へ遷移（バックスタックを消去）
-        findNavController().navigate(R.id.action_home_to_login)
+        val repository = (requireActivity().application as HealthCheckupApp).repository
+        viewLifecycleOwner.lifecycleScope.launch {
+            // 端末の Room DB から健診データを消去（Firestore上のデータには影響しない）
+            repository.clearLocalDataOnSignOut()
+            // Firebase Auth からサインアウト
+            FirebaseAuth.getInstance().signOut()
+            // Google Sign-In のキャッシュもクリア
+            val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).build()
+            GoogleSignIn.getClient(requireActivity(), gso).signOut()
+            // ログイン画面へ遷移（バックスタックを消去）
+            findNavController().navigate(R.id.action_home_to_login)
+        }
     }
 
     override fun onDestroyView() {
