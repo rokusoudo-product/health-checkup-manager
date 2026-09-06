@@ -24,6 +24,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
+import com.rokusoudo.healthcheckup.HealthCheckupApp
 import com.rokusoudo.healthcheckup.R
 import com.rokusoudo.healthcheckup.data.account.AccountDeletionProgress
 import com.rokusoudo.healthcheckup.databinding.FragmentHomeBinding
@@ -123,17 +124,26 @@ class HomeFragment : Fragment() {
     }
 
     /**
-     * サインアウトはFirebase Auth・Google Sign-Inのセッションを終了するのみで、
-     * クラウド・端末のデータ削除は一切行わない（アカウント削除機能とは明確に区別する。Issue #34）。
+     * サインアウトはFirebase Auth・Google Sign-Inのセッションを終了する。
+     * Issue #41: 共用端末に前の利用者の健診データが残らないよう、端末の Room DB もあわせて消去する
+     * （削除確認ダイアログ等は不要。既存UXは変えない。Room クリアは suspend 処理のため、
+     * ライフサイクルに紐づくコルーチンから呼び出す）。
+     * ただしクラウド（Firestore）上のデータや Firebase Auth のアカウント自体には一切影響しない点は、
+     * アカウント削除機能（Issue #34, [showDeleteAccountConfirmDialog]）と明確に区別する。
      */
     private fun signOut() {
-        // Firebase Auth からサインアウト
-        FirebaseAuth.getInstance().signOut()
-        // Google Sign-In のキャッシュもクリア
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).build()
-        GoogleSignIn.getClient(requireActivity(), gso).signOut()
-        // ログイン画面へ遷移（バックスタックを消去）
-        findNavController().navigate(R.id.action_home_to_login)
+        val repository = (requireActivity().application as HealthCheckupApp).repository
+        viewLifecycleOwner.lifecycleScope.launch {
+            // 端末の Room DB から健診データを消去（Firestore上のデータには影響しない）
+            repository.clearLocalDataOnSignOut()
+            // Firebase Auth からサインアウト
+            FirebaseAuth.getInstance().signOut()
+            // Google Sign-In のキャッシュもクリア
+            val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).build()
+            GoogleSignIn.getClient(requireActivity(), gso).signOut()
+            // ログイン画面へ遷移（バックスタックを消去）
+            findNavController().navigate(R.id.action_home_to_login)
+        }
     }
 
     /**

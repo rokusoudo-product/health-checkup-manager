@@ -9,7 +9,9 @@ import com.rokusoudo.healthcheckup.data.db.entity.ExaminationItem
 import com.rokusoudo.healthcheckup.data.db.entity.ExaminationRecord
 import com.rokusoudo.healthcheckup.data.db.entity.ItemMaster
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 
 /**
  * 健康診断データの Repository。
@@ -151,6 +153,34 @@ class HealthRepository(
      */
     fun getAllAbnormalItems(): Flow<List<ExaminationItem>> =
         db.itemDao().getAllAbnormalItems()
+
+    /**
+     * Issue #41: サインアウト時に端末の Room DB から健診データを消去する。
+     *
+     * 共用端末でサインアウトしても前の利用者の健診記録・項目マスターのカスタマイズ
+     * （基準値編集・お気に入り等）が閲覧できてしまう問題への対応。
+     * アカウント削除（Issue #34, `AccountDeletionManager.deleteAllLocalHealthData`）とは別処理:
+     * こちらは削除確認ダイアログを伴わないサインアウトの一部として、既存UXを変えずに実行する。
+     *
+     * `db.clearAllTables()` は診断記録・検査項目・項目マスターの全テーブルを消去するが、
+     * DB作成時のみ実行される `PREPOPULATE_CALLBACK` は再実行されないため、
+     * 項目マスターは [HealthCheckupDatabase.DEFAULT_ITEM_MASTERS] を明示的に再投入し、
+     * 端末を初期状態のカタログへ戻す（削除ではなく「初期化」）。
+     *
+     * 再度同じアカウントでサインインすると `LoginViewModel.signIn()` 経由で
+     * [restoreFromFirestore] が呼ばれ、Firestore に保存済みの記録・カスタマイズ済み項目マスターが
+     * itemName をキーに上書き復元される（Firestoreにない項目は初期値のまま残る＝データ喪失にはならない）。
+     *
+     * clearAllTables() はメインスレッドで呼べないため IO ディスパッチャ上で実行する。
+     */
+    suspend fun clearLocalDataOnSignOut() {
+        withContext(Dispatchers.IO) {
+            db.clearAllTables()
+            HealthCheckupDatabase.DEFAULT_ITEM_MASTERS.forEach { master ->
+                db.masterDao().upsert(master)
+            }
+        }
+    }
 
     /**
      * T-403: Firestoreから全データを取得してRoomへ復元する。
