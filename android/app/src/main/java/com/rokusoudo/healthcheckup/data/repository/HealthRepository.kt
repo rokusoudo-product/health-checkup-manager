@@ -233,7 +233,7 @@ class HealthRepository(
      * 端末の Room DB から全診断記録・全検査項目を削除する。
      * 項目マスター（item_masters）はユーザー個人のデータというより端末の基準値カタログのため対象外
      * （Firestore側の itemMasters は個人データとして削除対象。ローカルとFirestoreでスコープが異なる点に注意）。
-     * サインアウトからは呼び出さないこと（共用端末でのRoom DB全削除は別issue #41で対応予定）。
+     * サインアウトからは呼び出さないこと（共用端末でのRoom DB全削除は [clearLocalDataOnSignOut] で対応済み。Issue #41）。
      */
     suspend fun deleteAllLocalHealthData() {
         db.itemDao().deleteAll()
