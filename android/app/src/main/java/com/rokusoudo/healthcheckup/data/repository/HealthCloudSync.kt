@@ -13,4 +13,11 @@ interface HealthCloudSync {
     suspend fun saveItemMaster(uid: String, master: ItemMaster)
     suspend fun fetchRecords(uid: String): List<Pair<ExaminationRecord, List<ExaminationItem>>>
     suspend fun fetchItemMasters(uid: String): List<ItemMaster>
+
+    /**
+     * Issue #34: アカウント削除機能用。
+     * users/{uid} 配下の全ドキュメント（records・itemMasters）をFirestoreから削除する。
+     * 冪等: 既にデータが無い状態で呼んでも例外を投げない。
+     */
+    suspend fun deleteAllUserData(uid: String)
 }

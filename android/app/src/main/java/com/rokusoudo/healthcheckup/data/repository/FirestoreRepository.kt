@@ -1,5 +1,6 @@
 package com.rokusoudo.healthcheckup.data.repository
 
+import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -113,5 +114,34 @@ class FirestoreRepository : HealthCloudSync {
                 favoritedAt = doc.getLong("favoritedAt")
             )
         }
+    }
+
+    /**
+     * Issue #34: アカウント削除機能用。
+     * users/{uid} 配下の records・itemMasters コレクションの全ドキュメントを削除したのち、
+     * users/{uid} 自体のドキュメントも削除する（フィールドを持たないため通常はno-op）。
+     */
+    override suspend fun deleteAllUserData(uid: String) {
+        deleteAllDocuments(recordsRef(uid))
+        deleteAllDocuments(mastersRef(uid))
+        db.collection("users").document(uid).delete().await()
+    }
+
+    /**
+     * コレクション内の全ドキュメントを削除する。
+     * WriteBatch は1回あたり最大500件までしか操作できないため、500件ごとに分割してコミットする。
+     */
+    private suspend fun deleteAllDocuments(collection: CollectionReference) {
+        val snapshot = collection.get().await()
+        if (snapshot.isEmpty) return
+        snapshot.documents.chunked(FIRESTORE_BATCH_LIMIT).forEach { chunk ->
+            val batch = db.batch()
+            chunk.forEach { doc -> batch.delete(doc.reference) }
+            batch.commit().await()
+        }
+    }
+
+    companion object {
+        private const val FIRESTORE_BATCH_LIMIT = 500
     }
 }
