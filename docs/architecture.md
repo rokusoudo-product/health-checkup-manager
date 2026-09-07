@@ -38,8 +38,22 @@
       `lifecycleScope` 上のバックグラウンドコルーチンから呼び出し、UIをブロックしない。
       未ログイン時は何もせず、`HealthRepository` インスタンスあたり（＝1起動あたり）実際の同期は1回のみに制限する（多重実行防止）。
       Firestore例外・オフライン時は無視し、既存のローカルデータをそのまま使用する。
-      なお `restoreFromFirestore` は upsert のみで、Firestore側に存在しない記録をRoomから削除しない
-      （Web側で削除した記録の反映は本Issueのスコープ外・別Issueで対応）。
+      `restoreFromFirestore` は Issue #46（方式A: 差分ミラー削除 + push済みフラグ）により、
+      upsertに加えて「Firestore側で削除された記録・項目マスターをRoomからも削除する」
+      双方向反映まで行う。
+      - `ExaminationRecord` / `ItemMaster` は「Firestoreへのpushが確認できているか」を表す
+        `pushedToFirestore` フラグを持つ（新規保存直後はfalse、push成功時・Firestoreからの
+        fetchで存在確認できた時点でtrueになる）。
+      - fetch（診断記録・項目マスターの両方）が例外なく完全に成功した場合に限り、
+        「`pushedToFirestore = true` かつ今回のfetch結果に含まれない」行のみをRoomから削除する。
+        fetchが例外・タイムアウト・オフラインで失敗した場合はRoomから一切削除しない。
+      - push未確認（オフライン保存直後等）のローカル記録・項目マスターは削除対象から除外される。
+        これによりオフライン保存データが再同期で消えることを防ぐ
+        （ただしpush自体のリトライ機構は無いため、未pushのまま残り続ける課題はIssue #53で追跡）。
+      - **項目マスターは削除するのみで、初期カタログ（`DEFAULT_ITEM_MASTERS`）へは戻さない。**
+        既定マスタをWebで削除した場合も同様にAndroid側で復活させない（ユーザーの削除意図を
+        そのまま反映するため。Issue #41のサインアウト時再投入は「端末の引き渡し」文脈の初期化であり、
+        個別の削除操作とは意図が異なる）。
 - **Web**: Firestore を直接参照（ローカルキャッシュ不要、MVP段階）
 - **認証**: 両プラットフォームとも Firebase Auth（同一プロジェクト）でユーザーIDを共有
 - **データ分離**: Firestoreのパス `users/{uid}/records/{recordId}` でユーザーごとに分離

@@ -68,7 +68,7 @@ class MigrationTest {
         createV1Database(context)
 
         val room = Room.databaseBuilder(context, HealthCheckupDatabase::class.java, dbName)
-            .addMigrations(HealthCheckupDatabase.MIGRATION_1_2)
+            .addMigrations(HealthCheckupDatabase.MIGRATION_1_2, HealthCheckupDatabase.MIGRATION_2_3)
             .allowMainThreadQueries()
             .build()
         try {
@@ -88,6 +88,80 @@ class MigrationTest {
 
                 // 診断記録・検査項目データが保持される
                 assertEquals("2025-06-01", room.recordDao().getById(1L)!!.date)
+                assertEquals(1, room.itemDao().getByRecordIdOnce(1L).size)
+            }
+        } finally {
+            room.close()
+            context.deleteDatabase(dbName)
+        }
+    }
+
+    /** Room v2 が生成していたスキーマを再現する（category / isFavorite / favoritedAt 追加済み、pushedToFirestore はまだ無い） */
+    private fun createV2Database(context: Context) {
+        context.deleteDatabase(dbName)
+        val dbFile = context.getDatabasePath(dbName)
+        dbFile.parentFile?.mkdirs()
+        val db = SQLiteDatabase.openOrCreateDatabase(dbFile, null)
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `examination_records` " +
+                "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` TEXT NOT NULL, " +
+                "`facility` TEXT NOT NULL, `createdAt` INTEGER NOT NULL)"
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `examination_items` " +
+                "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `recordId` INTEGER NOT NULL, " +
+                "`itemName` TEXT NOT NULL, `value` TEXT NOT NULL, `unit` TEXT NOT NULL, " +
+                "`referenceMin` REAL, `referenceMax` REAL, `isAbnormal` INTEGER NOT NULL, " +
+                "FOREIGN KEY(`recordId`) REFERENCES `examination_records`(`id`) " +
+                "ON UPDATE NO ACTION ON DELETE CASCADE)"
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_examination_items_recordId` ON `examination_items` (`recordId`)")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `item_masters` " +
+                "(`itemName` TEXT NOT NULL, `unit` TEXT NOT NULL, `referenceMin` REAL, `referenceMax` REAL, " +
+                "`category` TEXT NOT NULL DEFAULT 'その他', `isFavorite` INTEGER NOT NULL DEFAULT 0, " +
+                "`favoritedAt` INTEGER, PRIMARY KEY(`itemName`))"
+        )
+        // v2時代（Issue #46移行前）に保存済みの記録・項目マスター。pushedToFirestoreの概念自体が無かった。
+        db.execSQL(
+            "INSERT INTO item_masters (itemName, unit, referenceMin, referenceMax, category, isFavorite, favoritedAt) " +
+                "VALUES ('LDLコレステロール', 'mg/dL', NULL, 139.0, '脂質', 1, 12345)"
+        )
+        db.execSQL("INSERT INTO examination_records (date, facility, createdAt) VALUES ('2025-06-01', 'テスト病院', 1000)")
+        db.execSQL(
+            "INSERT INTO examination_items (recordId, itemName, value, unit, referenceMin, referenceMax, isAbnormal) " +
+                "VALUES (1, 'LDLコレステロール', '150', 'mg/dL', NULL, 139.0, 1)"
+        )
+        db.version = 2
+        db.close()
+    }
+
+    /**
+     * Room v2→v3 Migration のテスト（Issue #46）。
+     * pushedToFirestore カラムが追加され、既存行は false（未確認）が既定値になること、
+     * 既存データ自体は一切失われないことを確認する。
+     */
+    @Test
+    fun `v2からv3への移行で既存データは保持されpushedToFirestoreはfalseが既定になる`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        createV2Database(context)
+
+        val room = Room.databaseBuilder(context, HealthCheckupDatabase::class.java, dbName)
+            .addMigrations(HealthCheckupDatabase.MIGRATION_2_3)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            runBlocking {
+                // 既存の項目マスター・診断記録・検査項目は失われない
+                val master = room.masterDao().getByName("LDLコレステロール")!!
+                assertEquals(139.0, master.referenceMax!!, 0.0)
+                assertEquals(true, master.isFavorite)
+                // Issue #46: 移行前のデータは push 状況が不明なため、安全側（未確認=false）に倒す
+                assertEquals(false, master.pushedToFirestore)
+
+                val record = room.recordDao().getById(1L)!!
+                assertEquals("2025-06-01", record.date)
+                assertEquals(false, record.pushedToFirestore)
                 assertEquals(1, room.itemDao().getByRecordIdOnce(1L).size)
             }
         } finally {

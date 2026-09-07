@@ -59,17 +59,21 @@ class HealthRepository(
         db.itemDao().insertAll(examinationItems)
 
         // Firestore同期（失敗してもローカル保存は維持）
-        syncRecordToFirestore(record.copy(id = recordId), examinationItems)
+        syncRecordToFirestore(recordId, record.copy(id = recordId), examinationItems)
 
         return recordId
     }
 
-    private suspend fun syncRecordToFirestore(record: ExaminationRecord, items: List<ExaminationItem>) {
+    private suspend fun syncRecordToFirestore(recordId: Long, record: ExaminationRecord, items: List<ExaminationItem>) {
         val uid = currentUidProvider() ?: return
         try {
             firestoreRepository.saveRecord(uid, record, items)
+            // Issue #46: push成功が確認できた記録のみ、restoreFromFirestoreの差分ミラー削除の対象にする
+            db.recordDao().markPushed(recordId)
         } catch (_: Exception) {
-            // オフライン時など同期失敗は無視
+            // オフライン時など同期失敗は無視。pushedToFirestoreはfalseのまま残るため、
+            // 次回のrestoreFromFirestoreミラー削除でこの記録が誤って削除されることはない
+            // （push未完了分のリトライ自体はIssue #53のスコープ）。
         }
     }
 
@@ -120,16 +124,21 @@ class HealthRepository(
         val uid = currentUidProvider() ?: return
         try {
             firestoreRepository.saveItemMaster(uid, master)
+            db.masterDao().markPushed(master.itemName)
         } catch (_: Exception) {
             // オフライン時など同期失敗は無視
         }
 
         // 再計算対象の記録をFirestoreにも再同期し、Web版との整合を保つ
+        // Issue #46: Web側で削除済みの記録は、直近の restoreFromFirestore の差分ミラー削除で
+        // 既に Room からも削除されているため getByItemName の結果に含まれず、
+        // affectedRecordIds にも入らない＝ここで誤って Firestore に復活pushされることはない。
         for (recordId in affectedRecordIds) {
             val record = db.recordDao().getById(recordId) ?: continue
             val itemsForRecord = db.itemDao().getByRecordIdOnce(recordId)
             try {
                 firestoreRepository.saveRecord(uid, record, itemsForRecord)
+                db.recordDao().markPushed(recordId)
             } catch (_: Exception) {
                 // オフライン時など同期失敗は無視
             }
@@ -185,24 +194,43 @@ class HealthRepository(
     /**
      * T-403: Firestoreから全データを取得してRoomへ復元する。
      * ログイン成功後に呼び出す（他端末のデータをローカルに同期）。
+     *
+     * Issue #46: Firestore を単一の真実の源とする双方向反映に拡張済み（方式A）。
+     * fetch が診断記録・項目マスターの両方とも例外なく完全に成功した場合に限り、
+     * 「push済み（pushedToFirestore = true）かつ今回のfetch結果に含まれない」
+     * ＝Firestore側で削除された記録・項目マスターを Room からも削除する（差分ミラー削除）。
+     * 項目マスターは削除するのみで、初期カタログ（DEFAULT_ITEM_MASTERS）へは戻さない
+     * （#46 未解決の質問2の決定）。
+     *
+     * fetch が例外・タイムアウト・オフラインで失敗した場合は、Room の upsert・削除を一切行わず
+     * 早期returnする（既存のローカルデータをそのまま保持する）。
+     * push未確認（オフライン保存直後等）のローカル記録・マスターは削除対象に含まれない
+     * （US-S02＝pushリトライ自体はIssue #53のスコープ）。
      */
     suspend fun restoreFromFirestore(uid: String) {
+        val records: List<Pair<ExaminationRecord, List<ExaminationItem>>>
+        val masters: List<ItemMaster>
         try {
-            // 診断記録を復元
-            val records = firestoreRepository.fetchRecords(uid)
-            for ((record, items) in records) {
-                db.recordDao().upsert(record)
-                db.itemDao().deleteByRecordId(record.id)
-                db.itemDao().insertAll(items)
-            }
-            // 項目マスターを復元
-            val masters = firestoreRepository.fetchItemMasters(uid)
-            for (master in masters) {
-                db.masterDao().upsert(master)
-            }
+            records = firestoreRepository.fetchRecords(uid)
+            masters = firestoreRepository.fetchItemMasters(uid)
         } catch (_: Exception) {
-            // ネットワーク不可時は無視（既存のローカルデータをそのまま使用）
+            // ネットワーク不可時は無視（既存のローカルデータをそのまま使用し、削除も行わない）
+            return
         }
+
+        // 診断記録を復元。Firestoreのfetchで確認できた時点でpush済みとみなしフラグを立てる
+        for ((record, items) in records) {
+            db.recordDao().upsert(record.copy(pushedToFirestore = true))
+            db.itemDao().deleteByRecordId(record.id)
+            db.itemDao().insertAll(items)
+        }
+        db.recordDao().deleteMirrored(records.map { it.first.id })
+
+        // 項目マスターを復元。記録と同様にfetchで確認できたものはpush済み扱いにする
+        for (master in masters) {
+            db.masterDao().upsert(master.copy(pushedToFirestore = true))
+        }
+        db.masterDao().deleteMirrored(masters.map { it.itemName })
     }
 
     /**

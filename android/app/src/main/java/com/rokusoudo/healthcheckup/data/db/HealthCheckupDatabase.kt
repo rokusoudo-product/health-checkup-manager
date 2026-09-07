@@ -16,7 +16,7 @@ import com.rokusoudo.healthcheckup.data.db.entity.ItemMaster
 
 @Database(
     entities = [ExaminationRecord::class, ExaminationItem::class, ItemMaster::class],
-    version = 2
+    version = 3
 )
 abstract class HealthCheckupDatabase : RoomDatabase() {
     abstract fun recordDao(): ExaminationRecordDao
@@ -97,6 +97,32 @@ abstract class HealthCheckupDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v2→v3（Issue #46）: examination_records / item_masters に
+         * pushedToFirestore（Firestoreへpush済みか確認できているか）を追加する。
+         *
+         * 既存行の既定値は false（未確認扱い）とする。
+         *
+         * 設計判断（安全側に倒す理由）:
+         * 既存インストールの各行が実際に Firestore への push に成功していたかどうかは
+         * これまで記録されておらず、区別する手段がない。ここで true を既定にすると、
+         * 「実は保存時にオフラインで push が失敗し、ローカルにしか存在しない記録・マスター」が
+         * 次回の restoreFromFirestore の差分ミラー削除で誤って削除されてしまう
+         * （＝健康記録という機微データの消失）リスクがある。
+         * false を既定にしておけば、その行が実際に Firestore 上にも存在する場合は
+         * 次回 restoreFromFirestore の fetch で該当ドキュメントが返り、
+         * pushedToFirestore=true に更新されたうえで通常のミラー削除対象に入るため実害はない。
+         * 一方、true を既定にした場合に起こり得る「データ消失」の方が
+         * false を既定にした場合に起こり得る「削除されないまま残り続ける（復活はしない）」より
+         * 明らかに深刻なため、false を選択する。
+         */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE examination_records ADD COLUMN pushedToFirestore INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE item_masters ADD COLUMN pushedToFirestore INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         private val PREPOPULATE_CALLBACK = object : RoomDatabase.Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {
                 super.onCreate(db)
@@ -121,7 +147,7 @@ abstract class HealthCheckupDatabase : RoomDatabase() {
                     "health_checkup.db"
                 )
                     .addCallback(PREPOPULATE_CALLBACK)
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build().also { INSTANCE = it }
             }
         }
