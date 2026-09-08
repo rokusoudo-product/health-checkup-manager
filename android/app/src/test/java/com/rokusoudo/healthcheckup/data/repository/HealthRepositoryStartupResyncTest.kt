@@ -139,5 +139,9 @@ class HealthRepositoryStartupResyncTest {
             if (shouldThrow) throw RuntimeException("Firestore unavailable")
             return mastersToReturn
         }
+
+        override suspend fun deleteAllUserData(uid: String) {
+            // 本テストでは未使用
+        }
     }
 }
