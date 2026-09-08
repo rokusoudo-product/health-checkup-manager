@@ -97,6 +97,14 @@ class FirestoreRepository : HealthCloudSync {
     }
 
     /**
+     * Issue #47: 診断記録を1件、Firestoreから削除する。
+     * ドキュメントID = Room の recordId（文字列）。失敗時は例外を呼び出し元へ伝播する。
+     */
+    override suspend fun deleteRecord(uid: String, recordId: Long) {
+        recordsRef(uid).document(recordId.toString()).delete().await()
+    }
+
+    /**
      * Firestoreから全項目マスターを取得する（他端末データ復元用）。
      */
     override suspend fun fetchItemMasters(uid: String): List<ItemMaster> {

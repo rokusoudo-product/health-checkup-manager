@@ -195,5 +195,9 @@ class HealthRepositoryRecalcTest {
             emptyList()
 
         override suspend fun fetchItemMasters(uid: String): List<ItemMaster> = emptyList()
+
+        override suspend fun deleteRecord(uid: String, recordId: Long) {
+            // 本テストでは未使用（Issue #47）
+        }
     }
 }

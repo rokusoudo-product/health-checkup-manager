@@ -89,6 +89,14 @@
     <!-- Record detail screen -->
     <string name="title_record_detail">検査結果詳細</string>
 
+    <!-- Record detail screen: Issue #47 記録削除導線 -->
+    <string name="menu_delete_record">この記録を削除</string>
+    <string name="dialog_title_delete_record">この記録を削除しますか？</string>
+    <string name="dialog_message_delete_record">削除すると元に戻せません。この記録に含まれる検査項目もすべて削除されます。</string>
+    <string name="btn_delete_record">削除する</string>
+    <string name="msg_delete_record_success">記録を削除しました</string>
+    <string name="msg_delete_record_error">削除に失敗しました: %1$s</string>
+
     <!-- Item master screen -->
     <string name="title_item_master">基準値マスター</string>
     <string name="btn_add_master">マスター追加</string>

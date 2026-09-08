@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 記録詳細画面のオーバーフローメニュー（Issue #47: 記録削除導線）。
+     誤操作防止のため常時表示のアイコンではなくオーバーフローに格納する（Issue #34のアカウント削除と同方針）。 -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_delete_record"
+        android:title="@string/menu_delete_record"
+        app:showAsAction="never" />
+
+</menu>
