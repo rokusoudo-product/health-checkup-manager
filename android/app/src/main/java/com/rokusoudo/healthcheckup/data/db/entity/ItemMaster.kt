@@ -20,7 +20,13 @@ data class ItemMaster(
     @ColumnInfo(defaultValue = "0")
     val isFavorite: Boolean = false,
     /** お気に入り登録日時（epoch millis）。並び順=登録順（昇順）に使用。OFF時は null */
-    val favoritedAt: Long? = null
+    val favoritedAt: Long? = null,
+    /**
+     * Issue #46: Firestoreへのpushが確認できているか。ExaminationRecord.pushedToFirestore と同じ意図。
+     * restoreFromFirestore() の差分ミラー削除は true の行のみを削除対象にする。
+     */
+    @ColumnInfo(defaultValue = "0")
+    val pushedToFirestore: Boolean = false
 )
 
 /**

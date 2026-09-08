@@ -27,6 +27,20 @@ interface ExaminationRecordDao {
     @Query("SELECT * FROM examination_records WHERE id = :id")
     suspend fun getById(id: Long): ExaminationRecord?
 
+    /** Issue #46: Firestoreへのpushが成功した記録に確認フラグを立てる。 */
+    @Query("UPDATE examination_records SET pushedToFirestore = 1 WHERE id = :id")
+    suspend fun markPushed(id: Long)
+
+    /**
+     * Issue #46: 差分ミラー削除。push済み（pushedToFirestore = 1）かつ、
+     * 直近の restoreFromFirestore の fetch 結果（[keepIds]）に含まれない
+     * ＝Firestore側で削除された記録を Room からも削除する。
+     * push未確認（オフライン保存直後等）の記録は対象外のため誤って消えない。
+     * 削除は examination_items へ ON DELETE CASCADE で伝播する。
+     */
+    @Query("DELETE FROM examination_records WHERE pushedToFirestore = 1 AND id NOT IN (:keepIds)")
+    suspend fun deleteMirrored(keepIds: List<Long>)
+
     /**
      * Issue #34: アカウント削除機能用。端末内の全診断記録を削除する。
      * （サインアウト時には呼ばれない。サインアウトでのRoom DB削除は別issue #41で対応）
