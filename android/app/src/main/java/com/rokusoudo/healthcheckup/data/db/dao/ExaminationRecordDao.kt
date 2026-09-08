@@ -40,4 +40,11 @@ interface ExaminationRecordDao {
      */
     @Query("DELETE FROM examination_records WHERE pushedToFirestore = 1 AND id NOT IN (:keepIds)")
     suspend fun deleteMirrored(keepIds: List<Long>)
+
+    /**
+     * Issue #34: アカウント削除機能用。端末内の全診断記録を削除する。
+     * （サインアウト時には呼ばれない。サインアウトでのRoom DB削除は別issue #41で対応）
+     */
+    @Query("DELETE FROM examination_records")
+    suspend fun deleteAll()
 }

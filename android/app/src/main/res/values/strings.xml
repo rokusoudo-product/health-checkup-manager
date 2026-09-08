@@ -132,4 +132,23 @@
     <string name="btn_google_sign_in">Googleでログイン</string>
     <string name="menu_sign_out">サインアウト</string>
     <string name="msg_sign_in_failed">ログインに失敗しました</string>
+
+    <!-- Issue #34: アカウント削除機能 -->
+    <string name="menu_delete_account">アカウントとデータを削除</string>
+    <string name="dialog_title_delete_account">アカウントとデータを削除しますか？</string>
+    <string name="dialog_message_delete_account">以下のデータがすべて削除されます。この操作は取り消せません。\n\n・クラウド上の全健診記録\n・端末内の全健診記録\n・ログイン情報（アカウント）</string>
+    <string name="btn_delete_account">削除する</string>
+    <string name="msg_deleting_account">削除しています…</string>
+    <string name="msg_delete_account_success">アカウントとデータを削除しました</string>
+    <string name="dialog_title_reauth_required">再度サインインしてください</string>
+    <string name="dialog_message_reauth_required">セキュリティのため、削除を完了するには最近のサインインが必要です。Googleで再サインインしてから削除を続けます。</string>
+    <string name="btn_reauth_and_retry">再サインインして続ける</string>
+    <string name="dialog_title_delete_account_error">削除を完了できませんでした</string>
+    <string name="msg_delete_account_error">エラーが発生しました: %1$s\n\n現在の状況:\n%2$s</string>
+    <string name="msg_delete_account_progress_detail">%1$s: %2$s\n%3$s: %4$s\n%5$s: %6$s</string>
+    <string name="label_deletion_status_done">削除済み</string>
+    <string name="label_deletion_status_pending">未削除</string>
+    <string name="label_deletion_target_cloud">クラウド上のデータ</string>
+    <string name="label_deletion_target_local">端末内のデータ</string>
+    <string name="label_deletion_target_auth">アカウント本体</string>
 </resources>

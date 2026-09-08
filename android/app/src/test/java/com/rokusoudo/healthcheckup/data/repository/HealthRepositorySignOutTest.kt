@@ -167,5 +167,9 @@ class HealthRepositorySignOutTest {
         override suspend fun fetchItemMasters(uid: String): List<ItemMaster> {
             return mastersToReturn
         }
+
+        override suspend fun deleteAllUserData(uid: String) {
+            // 本テストでは未使用
+        }
     }
 }

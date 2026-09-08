@@ -237,5 +237,9 @@ class HealthRepositoryMirrorDeleteTest {
             if (shouldThrow) throw RuntimeException("Firestore unavailable")
             return mastersToReturn
         }
+
+        override suspend fun deleteAllUserData(uid: String) {
+            // Issue #46 のミラー削除テストの対象外（Issue #34 のアカウント削除専用メソッド）
+        }
     }
 }

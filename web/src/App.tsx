@@ -8,6 +8,7 @@ import RecordDetail from './pages/RecordDetail'
 import RecordForm from './pages/RecordForm'
 import ItemMasters from './pages/ItemMasters'
 import TrendGraph from './pages/TrendGraph'
+import AccountDeletionDialog from './components/AccountDeletionDialog'
 import './App.css'
 
 function LoginPage() {
@@ -39,6 +40,7 @@ function LoginPage() {
 }
 
 function Layout({ user, children }: { user: User; children: React.ReactNode }) {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   return (
     <div className="layout">
       <nav className="navbar">
@@ -58,11 +60,18 @@ function Layout({ user, children }: { user: User; children: React.ReactNode }) {
           {user.photoURL && <img src={user.photoURL} alt="" className="nav-avatar" />}
           <span className="nav-name">{user.displayName}</span>
           <button className="btn-logout" onClick={() => signOut(auth)}>ログアウト</button>
+          {/* Issue #34: サインアウトとは別の破壊的操作として明確に分離する */}
+          <button className="btn-delete-account-link" onClick={() => setShowDeleteDialog(true)}>
+            アカウントを削除
+          </button>
         </div>
       </nav>
       <main className="main-content">
         {children}
       </main>
+      {showDeleteDialog && (
+        <AccountDeletionDialog onClose={() => setShowDeleteDialog(false)} />
+      )}
     </div>
   )
 }

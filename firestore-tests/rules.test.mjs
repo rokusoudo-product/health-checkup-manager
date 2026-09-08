@@ -15,7 +15,7 @@ import {
   assertSucceeds,
   initializeTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
 
 const ALICE = 'alice-uid';
 const BOB = 'bob-uid';
@@ -83,6 +83,25 @@ describe('firestore.rules — 診断記録 users/{uid}/records', () => {
     const db = testEnv.authenticatedContext(BOB).firestore();
     await assertFails(getDocs(collection(db, `users/${ALICE}/records`)));
   });
+
+  // Issue #34: アカウント削除機能は本人の全記録をFirestoreから削除する。
+  // write ルールは create/update/delete をまとめて許可する設計だが、
+  // delete individual操作でも同様に機能することを明示的に確認する。
+  it('本人は自分の記録を削除できる（アカウント削除機能が依存する権限）', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), `users/${ALICE}/records/6`), { date: '2026-04-06' });
+    });
+    const db = testEnv.authenticatedContext(ALICE).firestore();
+    await assertSucceeds(deleteDoc(doc(db, `users/${ALICE}/records/6`)));
+  });
+
+  it('他人は記録を削除できない', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), `users/${ALICE}/records/7`), { date: '2026-04-07' });
+    });
+    const db = testEnv.authenticatedContext(BOB).firestore();
+    await assertFails(deleteDoc(doc(db, `users/${ALICE}/records/7`)));
+  });
 });
 
 describe('firestore.rules — 項目マスター users/{uid}/itemMasters', () => {
@@ -103,6 +122,14 @@ describe('firestore.rules — 項目マスター users/{uid}/itemMasters', () =>
   it('他人のマスターは書き込めない', async () => {
     const db = testEnv.authenticatedContext(BOB).firestore();
     await assertFails(setDoc(doc(db, `users/${ALICE}/itemMasters/血糖値`), { unit: 'mg/dL' }));
+  });
+
+  it('本人は自分のマスターを削除できる（アカウント削除機能が依存する権限）', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), `users/${ALICE}/itemMasters/尿酸`), { unit: 'mg/dL' });
+    });
+    const db = testEnv.authenticatedContext(ALICE).firestore();
+    await assertSucceeds(deleteDoc(doc(db, `users/${ALICE}/itemMasters/尿酸`)));
   });
 });
 
