@@ -12,6 +12,13 @@
   --color-favorite: #D32F2F;
   --color-outline: #e5e4e7;
 
+  /* 以下4トークンは Issue #57（共通シャーシのトークン化）で追加。DESIGN.md のカラートークン表にも追記済み。
+     Android は本 Issue のスコープ外のため未対応（on-primary のみ Android colors.xml の on_primary と同値） */
+  --color-on-primary: #FFFFFF;
+  --color-primary-hover: #00595C;
+  --color-disabled: #aaaaaa;
+  --color-hover-neutral: #f5f5f5;
+
   --code-bg: #f4f3ec;
 
   /* 移行用エイリアス（Issue #56）。web/src/App.css から旧トークン名で計47箇所参照されているため、
