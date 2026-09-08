@@ -165,5 +165,9 @@ class HealthRepositoryDeleteTest {
             if (shouldThrowOnDelete) throw RuntimeException("Firestore unavailable")
             deletedRecordIds.add(recordId)
         }
+
+        override suspend fun deleteAllUserData(uid: String) {
+            // 本テストでは未使用
+        }
     }
 }

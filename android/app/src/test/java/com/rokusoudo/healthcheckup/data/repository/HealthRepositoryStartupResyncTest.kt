@@ -143,5 +143,9 @@ class HealthRepositoryStartupResyncTest {
         override suspend fun deleteRecord(uid: String, recordId: Long) {
             // 本テストでは未使用（Issue #47）
         }
+
+        override suspend fun deleteAllUserData(uid: String) {
+            // 本テストでは未使用
+        }
     }
 }
