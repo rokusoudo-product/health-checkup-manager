@@ -164,6 +164,41 @@ class HealthRepository(
         db.itemDao().getAllAbnormalItems()
 
     /**
+     * Issue #47: 診断記録を1件、確認ダイアログを経て物理削除する。
+     *
+     * 設計判断（Issue #47 未解決の質問への暫定回答。詳細は PR 本文参照）:
+     * - 物理削除とする（Undo・ゴミ箱は実装しない。健康情報の性質上、残さず消す方を優先）
+     * - Firestore → Room の順で削除する。Firestore の削除に失敗した場合は Room からも
+     *   削除せず [Result.failure] を返し、例外を握りつぶさない。
+     *   理由: 先に Room だけ消してしまうと、Firestore 側にドキュメントが残ったままになり、
+     *   Issue #46（方式A・差分ミラー削除）の次回 restoreFromFirestore で
+     *   「push済みかつ fetch 結果にある」記録として Room に再 upsert され、
+     *   削除したはずの記録が復活し得る。この経路を避けるため、Firestore 削除の成功を
+     *   確認できるまで Room の記録は残す。
+     * - オフライン等で削除できない場合でも、削除ボタン自体は塞がない
+     *   （呼び出し元がこの戻り値のエラーをユーザーに提示する）。
+     *
+     * @return 成功時 [Result.success]。Firestore 削除に失敗した場合は [Result.failure]（Room は未変更）。
+     */
+    suspend fun deleteRecord(recordId: Long): Result<Unit> {
+        val uid = currentUidProvider()
+        if (uid != null) {
+            try {
+                firestoreRepository.deleteRecord(uid, recordId)
+            } catch (e: Exception) {
+                return Result.failure(e)
+            }
+        }
+        db.withTransaction {
+            // ExaminationItem の外部キーは CASCADE 指定だが、孤児レコードを残さないことを
+            // 明示的に担保するため examination_items も自前で削除する（restoreFromFirestore と同じ方針）。
+            db.itemDao().deleteByRecordId(recordId)
+            db.recordDao().getById(recordId)?.let { db.recordDao().delete(it) }
+        }
+        return Result.success(Unit)
+    }
+
+    /**
      * Issue #41: サインアウト時に端末の Room DB から健診データを消去する。
      *
      * 共用端末でサインアウトしても前の利用者の健診記録・項目マスターのカスタマイズ

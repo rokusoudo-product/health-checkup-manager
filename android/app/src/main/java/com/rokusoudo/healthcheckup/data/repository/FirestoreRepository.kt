@@ -9,6 +9,7 @@ import com.rokusoudo.healthcheckup.data.db.entity.ExaminationRecord
 import com.rokusoudo.healthcheckup.data.db.entity.ItemCategories
 import com.rokusoudo.healthcheckup.data.db.entity.ItemMaster
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeout
 
 /**
  * Cloud Firestore との読み書きを担当する Repository。
@@ -98,6 +99,25 @@ class FirestoreRepository : HealthCloudSync {
     }
 
     /**
+     * Issue #47: 診断記録を1件、Firestoreから削除する。
+     * ドキュメントID = Room の recordId（文字列）。失敗時は例外を呼び出し元へ伝播する。
+     *
+     * Firestore SDK はデフォルトでオフライン永続化が有効なため、オフライン時の
+     * delete().await() はネットワーク復帰まで完了しない（すぐには例外を投げない）。
+     * HealthRepository.deleteRecord は「Firestore成功が確認できるまでRoomを消さない」
+     * 設計のため、これをタイムアウトなしで待つと削除操作がUI上で無期限にハングし、
+     * ユーザーへエラー提示すらできなくなる（Issue #47の「握りつぶさない」要求に反する）。
+     * そのためタイムアウトを設け、TimeoutCancellationException を通常の失敗として
+     * HealthRepository側のcatchに流す。タイムアウト後もSDKに削除自体はキューされ得るが、
+     * その場合はIssue #46（方式A）の次回restoreFromFirestoreの差分ミラー削除がRoom側を追従させる。
+     */
+    override suspend fun deleteRecord(uid: String, recordId: Long) {
+        withTimeout(DELETE_TIMEOUT_MS) {
+            recordsRef(uid).document(recordId.toString()).delete().await()
+        }
+    }
+
+    /**
      * Firestoreから全項目マスターを取得する（他端末データ復元用）。
      */
     override suspend fun fetchItemMasters(uid: String): List<ItemMaster> {
@@ -141,7 +161,9 @@ class FirestoreRepository : HealthCloudSync {
         }
     }
 
-    companion object {
-        private const val FIRESTORE_BATCH_LIMIT = 500
+    private companion object {
+        /** Issue #47: 記録削除のFirestore待ち上限（オフライン時に無期限ハングしないため）。 */
+        const val DELETE_TIMEOUT_MS = 10_000L
+        const val FIRESTORE_BATCH_LIMIT = 500
     }
 }

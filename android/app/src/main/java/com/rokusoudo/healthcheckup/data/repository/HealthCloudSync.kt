@@ -15,6 +15,13 @@ interface HealthCloudSync {
     suspend fun fetchItemMasters(uid: String): List<ItemMaster>
 
     /**
+     * Issue #47: 診断記録を1件、Firestoreから削除する。
+     * 失敗時は例外をそのまま呼び出し元（HealthRepository.deleteRecord）へ伝播させる
+     * （オフライン時などに握りつぶすと Room だけ削除されFirestore側に残り続けるため）。
+     */
+    suspend fun deleteRecord(uid: String, recordId: Long)
+
+    /**
      * Issue #34: アカウント削除機能用。
      * users/{uid} 配下の全ドキュメント（records・itemMasters）をFirestoreから削除する。
      * 冪等: 既にデータが無い状態で呼んでも例外を投げない。

@@ -208,6 +208,10 @@ class AccountDeletionManagerTest {
             lastDeletedUid = uid
             callLog.add("cloud" to System.nanoTime())
         }
+
+        override suspend fun deleteRecord(uid: String, recordId: Long) {
+            // 本テストでは未使用（Issue #47）
+        }
     }
 
     private class FakeAccountAuthActions(var uid: String?) : AccountAuthActions {
