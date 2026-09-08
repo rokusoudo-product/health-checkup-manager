@@ -5,7 +5,7 @@
 
 ## 基本方針
 
-- 対象プラットフォーム: Android（min API 26）。Web 版は本書のトークンを参照するが今回の刷新対象外（2026-08-12 追記: Web の経年グラフ画面【Issue #28】以降に追加する Web 新規画面には、下記「Web 版トークン適用方針」を適用する。既存の Web 4画面 `RecordList` / `RecordDetail` / `RecordForm` / `ItemMasters` はカラーコード直書きのまま残っており、本追記の対象外・別タスクでの是正待ち）
+- 対象プラットフォーム: Android（min API 26）。Web 版は本書のトークンを参照するが今回の刷新対象外（2026-08-12 追記: Web の経年グラフ画面【Issue #28】以降に追加する Web 新規画面には、下記「Web 版トークン適用方針」を適用する。2026-09-08 追記: 既存 Web 4画面のうち `ItemMasters` と経年グラフ画面は既にトークン化済みで直書きは0件。残る `RecordList` / `RecordDetail` / `RecordForm` のカラーコード直書きの是正は、トークン基盤を整備する Issue #56 を前提として、画面別の後続 Issue #57（共通シャーシ）・#58（ログイン画面）・#59（記録一覧）・#60（記録詳細・入力フォーム）が担当する）
 - 準拠ガイドライン: Material Design 3
 - 使用コンポーネントライブラリ: Material Components for Android（XML/View ベース）
 - トーン&マナー: 落ち着いた健康管理ツール。医療データを扱うため誇張のない誠実な配色
@@ -23,6 +23,7 @@
 | warning | #B8860B | #FFD54F | 注意 |
 | success | #2E7D32 | #81C784 | 成功 |
 | favorite | #D32F2F | #EF5350 | お気に入り♥（ON時） |
+| outline | #e5e4e7 | 未定義 | 枠線（2026-09-08 追記, Issue #56。Web の `--border` 用に新設。現行 Web の値 `#e5e4e7` をそのまま採用し、背景 `#FAFDFC` に対して枠線として視認できることを確認した。Android では未使用のためダーク値は未定義） |
 
 ### カテゴリカラー（検査項目の文字・枠色。2026-07-18 決定 Q1）
 
@@ -68,23 +69,34 @@
 | S-06b 手入力フォーム | 数値入力 | 登録する | エラー: 数値バリデーション |
 | S-07 お問い合わせ | サポート連絡 | 送信（メーラー起動） | エラー: メーラー不在時の案内 |
 
-## Web 版トークン適用方針（2026-08-12 追記, Issue #28）
+## Web 版トークン適用方針（2026-08-12 追記, Issue #28。2026-09-08 改訂, Issue #56）
 
 Web（`web/`）で新規に追加する画面は、Android と同じ意味のトークンを CSS カスタムプロパティとして参照する。カラーコードの直書きは禁止。
 
-- 定義場所: `web/src/index.css` の `:root`（ライト）と `@media (prefers-color-scheme: dark)` 内（ダーク）
+- **Web はライト固定であり、ダークモードは対象外**（2026-09-08 代表判断）。`web/src/index.css` の `:root` に `color-scheme: light` を明示し、`@media (prefers-color-scheme: dark)` によるトークンのダーク値定義は行わない。
+  Android は `res/values/colors.xml` / `res/values-night/colors.xml` の2本立てでダークモードに対応しているため、**Android はダーク対応・Web はライト固定**という差異が生じる。これは意図した判断であり、Web のダーク対応漏れではない。
+- 定義場所: `web/src/index.css` の `:root`（ライト値のみ）
 - 命名: `--color-<トークン名>`（Android のトークン表と同じ名前を使う）
-- 現時点で定義済みのトークン（本 Issue で追加）:
+- 現時点で定義済みのトークン（ライト値のみ。Issue #56 で `primary` / `error` 以外を追加）:
 
-| CSS変数 | トークン | ライト | ダーク | 用途 |
-|--------|---------|-------|-------|------|
-| `--color-primary` | primary | #00696C | #4DD8DC | グラフの主線・アクティブなタブなど主要アクション相当 |
-| `--color-error` | error | #BA1A1A | #FFB4AB | 基準値の上限・下限を示す参照線 |
+| CSS変数 | トークン | ライト | 用途 |
+|--------|---------|-------|------|
+| `--color-primary` | primary | #00696C | グラフの主線・アクティブなタブなど主要アクション相当 |
+| `--color-background` | background | #FAFDFC | 画面背景 |
+| `--color-surface` | surface | #FFFFFF | カード・パネル |
+| `--color-text-primary` | text-primary | #191C1C | 本文 |
+| `--color-text-secondary` | text-secondary | #3F4948 | 補助テキスト |
+| `--color-error` | error | #BA1A1A | 基準値の上限・下限を示す参照線 |
+| `--color-warning` | warning | #B8860B | 注意 |
+| `--color-success` | success | #2E7D32 | 成功 |
+| `--color-favorite` | favorite | #D32F2F | お気に入り♥（ON時） |
+| `--color-outline` | outline | #e5e4e7 | 枠線 |
 
 - 通常の CSS（`color` / `background` 等）では `var(--color-primary)` のようにそのまま参照する
 - **Canvas 描画（Chart.js 等）では `var()` がブラウザの Canvas 2D API 上で解決されないため**、`getComputedStyle(document.documentElement).getPropertyValue('--color-primary')` で実測値の文字列を取得してから渡す（`web/src/components/TrendChart.tsx` 参照）
 - 新規トークンが必要になったら、この表と Android 側のカラートークン表の両方に追記し、値を一致させる
-- 既存 4 画面（`RecordList` / `RecordDetail` / `RecordForm` / `ItemMasters`）の直書きカラーコードは本追記の対象外。是正は別タスクで行う
+- 既存 Web 4画面のうち `ItemMasters` と経年グラフ画面は既にトークン化済みで直書きは0件。残る `RecordList` / `RecordDetail` / `RecordForm` の直書きカラーコードの是正は、本トークン基盤（Issue #56）を前提として画面別の後続 Issue #57〜#60 が担当する
+- 移行用エイリアス（`--text-h` / `--text` / `--bg` / `--border`）: `App.css` の既存参照が壊れないよう、新トークンの `var()` 別名として `index.css` に残置している。画面別の置き換えが完了した最後の Issue（#60）が撤去する
 
 ## プロジェクト固有ルール
 
