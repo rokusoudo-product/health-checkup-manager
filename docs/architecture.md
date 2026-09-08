@@ -329,3 +329,53 @@ users/{uid}/
 - [ ] CameraX + ML Kit の動作確認プロトタイプ（撮影→テキスト抽出表示）
 
 > 完全なDB保存・グラフ機能は Phase 2 以降。
+
+---
+
+## 8. CI とブランチ保護の方針
+
+`main` は ruleset `main-protection` で保護する。設定内容と、なぜその設定にしているかを以下に記録する。
+
+### 必須ステータスチェック
+
+| チェック | ワークフロー | 対象 |
+|---------|-------------|------|
+| `unit-test` | `android-test.yml` | Android のユニットテスト・ビルド |
+| `rules-test` | `firestore-rules-test.yml` | Firestore セキュリティルール（Emulator） |
+| `lint-and-build` | `web-ci.yml` | Web の Lint・テスト・ビルド |
+
+Android・Firestore ルール・Web のいずれが壊れても `main` に入らないよう、3つとも必須にする。
+
+### Require branches to be up to date before merging（strict）
+
+**この設定は有効にする。無効に戻さないこと。**
+
+ruleset の `strict_required_status_checks_policy` を `true` にすると、base（`main`）が進んだ PR は
+ブランチを更新して CI を再実行するまでマージできなくなる。マージのたびに他の open PR で
+再実行が必要になるが、次の理由でその手間を受け入れる。
+
+**根拠となった事故（2026-09-08）**
+
+`main` がコンパイルできない状態になった。原因は、テキスト上は競合しないが組み合わせると壊れる
+「意味的なコンフリクト」である。
+
+1. PR #55（Issue #47）が `HealthCloudSync` インターフェースに `deleteRecord` を追加した
+2. PR #54（Issue #46）が新規テストファイル（独自の `FakeHealthCloudSync`）を追加した。
+   PR #55 の存在を知らないため `deleteRecord` を実装していない
+3. **両 PR とも CI は green。git も競合を報告しない**（変更ファイルが異なるため）。そのままマージ
+4. マージ後の `main` でコンパイルエラー。以降すべての PR の `unit-test` が赤くなった
+
+どちらの PR にも欠陥はない。それぞれ「自分が CI を回した時点の `main`」では正しかった。
+`pull_request` イベントの CI は PR と base のマージ結果に対して走るため本来は検出できたはずで、
+検出できなかったのは **CI 実行後に `main` が動いたのに再実行が強制されなかった**ためである。
+strict を有効にすれば、この破損はマージ前に検出される。
+
+同じ設定は逆方向の事故も防ぐ。修復 PR のマージ後、既存 PR の CI が再実行されず
+「古い赤」が残り続ける現象も同日に発生した（Issue #56 / PR #61）。
+
+なお**マージキュー（`merge_group`）は採用しない**。本リポジトリは public のため機能自体は
+利用できるが、上記の事例は strict で防げる。PR が並走して滞留するようになった時点で再検討する。
+
+### 関連
+
+- 追従漏れが起きにくい構造にする側の対策（`FakeHealthCloudSync` の複製解消）は Issue #64 で扱う
