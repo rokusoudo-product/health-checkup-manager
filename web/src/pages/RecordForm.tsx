@@ -1,14 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { saveRecord, fetchMasters } from '../firestoreService'
-import type { ExaminationItem, ItemMaster } from '../types'
+import type { ItemMaster } from '../types'
+import {
+  CUSTOM_ITEM_OPTION_VALUE,
+  createEmptyRow,
+  selectItemName,
+  setCustomItemName,
+  toSavableItems,
+  updateRowField,
+  type FormItemRow,
+} from '../lib/recordFormRow'
 
 interface Props { uid: string }
-
-const emptyItem = (): ExaminationItem => ({
-  itemName: '', value: '', unit: '',
-  referenceMin: null, referenceMax: null, isAbnormal: false,
-})
 
 export default function RecordForm({ uid }: Props) {
   const navigate = useNavigate()
@@ -16,7 +20,11 @@ export default function RecordForm({ uid }: Props) {
 
   const [date, setDate] = useState(today)
   const [facility, setFacility] = useState('')
-  const [items, setItems] = useState<ExaminationItem[]>([emptyItem()])
+  // 行の識別には配列インデックスではなく安定した key を使う（Issue #51）。
+  // インデックスで直接入力モードを管理すると、行を削除したときにモードが別の行にずれてしまうため、
+  // 「直接入力モードかどうか」を行オブジェクト自身（FormItemRow.isCustom）に持たせている。
+  const nextKey = useRef(1)
+  const [rows, setRows] = useState<FormItemRow[]>([createEmptyRow('0')])
   const [masters, setMasters] = useState<ItemMaster[]>([])
   const [saving, setSaving] = useState(false)
 
@@ -24,48 +32,32 @@ export default function RecordForm({ uid }: Props) {
     fetchMasters(uid).then(setMasters)
   }, [uid])
 
-  const updateItem = (index: number, field: keyof ExaminationItem, value: string) => {
-    setItems(prev => {
-      const next = [...prev]
-      const item = { ...next[index] }
-
-      if (field === 'itemName') {
-        // 項目名選択時にマスターから基準値を自動補完
-        item.itemName = value
-        const master = masters.find(m => m.itemName === value)
-        if (master) {
-          item.unit = master.unit
-          item.referenceMin = master.referenceMin
-          item.referenceMax = master.referenceMax
-        }
-      } else if (field === 'referenceMin' || field === 'referenceMax') {
-        (item as Record<string, unknown>)[field] = value === '' ? null : Number(value)
-      } else {
-        (item as Record<string, unknown>)[field] = value
-      }
-
-      // isAbnormal を再計算
-      const num = parseFloat(item.value)
-      item.isAbnormal = !isNaN(num) && (
-        (item.referenceMin != null && num < item.referenceMin) ||
-        (item.referenceMax != null && num > item.referenceMax)
-      )
-
-      next[index] = item
-      return next
-    })
+  const updateRowAt = (index: number, updater: (row: FormItemRow) => FormItemRow) => {
+    setRows(prev => prev.map((row, i) => (i === index ? updater(row) : row)))
   }
 
-  const addItem = () => setItems(prev => [...prev, emptyItem()])
+  const handleItemNameSelect = (index: number, value: string) =>
+    updateRowAt(index, row => selectItemName(row, value, masters))
+
+  const handleCustomNameChange = (index: number, value: string) =>
+    updateRowAt(index, row => setCustomItemName(row, value))
+
+  const handleFieldChange = (index: number, field: 'value' | 'unit', value: string) =>
+    updateRowAt(index, row => updateRowField(row, field, value))
+
+  const addItem = () => {
+    const key = String(nextKey.current++)
+    setRows(prev => [...prev, createEmptyRow(key)])
+  }
   const removeItem = (index: number) =>
-    setItems(prev => prev.filter((_, i) => i !== index))
+    setRows(prev => prev.filter((_, i) => i !== index))
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!date) return
     setSaving(true)
     try {
-      const validItems = items.filter(i => i.itemName.trim())
+      const validItems = toSavableItems(rows)
       await saveRecord(uid, { date, facility, items: validItems })
       navigate('/')
     } finally {
@@ -105,49 +97,50 @@ export default function RecordForm({ uid }: Props) {
             </button>
           </div>
 
-          {items.map((item, i) => (
-            <div key={i} className={`item-row ${item.isAbnormal ? 'item-abnormal' : ''}`}>
+          {rows.map((row, i) => (
+            <div key={row.key} className={`item-row ${row.item.isAbnormal ? 'item-abnormal' : ''}`}>
               <div className="item-fields">
                 <div className="item-field-name">
                   {masters.length > 0 ? (
                     <select
-                      value={item.itemName}
-                      onChange={e => updateItem(i, 'itemName', e.target.value)}
+                      value={row.isCustom ? CUSTOM_ITEM_OPTION_VALUE : row.item.itemName}
+                      onChange={e => handleItemNameSelect(i, e.target.value)}
                     >
                       <option value="">項目を選択</option>
                       {masters.map(m => (
                         <option key={m.itemName} value={m.itemName}>{m.itemName}</option>
                       ))}
-                      <option value="__custom__">直接入力</option>
+                      <option value={CUSTOM_ITEM_OPTION_VALUE}>直接入力</option>
                     </select>
                   ) : (
                     <input
                       type="text"
-                      value={item.itemName}
-                      onChange={e => updateItem(i, 'itemName', e.target.value)}
+                      value={row.item.itemName}
+                      onChange={e => handleCustomNameChange(i, e.target.value)}
                       placeholder="項目名"
                     />
                   )}
-                  {item.itemName === '__custom__' && (
+                  {row.isCustom && (
                     <input
                       type="text"
+                      value={row.item.itemName}
                       placeholder="項目名を入力"
-                      onChange={e => updateItem(i, 'itemName', e.target.value)}
+                      onChange={e => handleCustomNameChange(i, e.target.value)}
                       className="custom-name"
                     />
                   )}
                 </div>
                 <input
                   type="text"
-                  value={item.value}
-                  onChange={e => updateItem(i, 'value', e.target.value)}
+                  value={row.item.value}
+                  onChange={e => handleFieldChange(i, 'value', e.target.value)}
                   placeholder="値"
                   className="item-field-value"
                 />
                 <input
                   type="text"
-                  value={item.unit}
-                  onChange={e => updateItem(i, 'unit', e.target.value)}
+                  value={row.item.unit}
+                  onChange={e => handleFieldChange(i, 'unit', e.target.value)}
                   placeholder="単位"
                   className="item-field-unit"
                 />
@@ -156,7 +149,7 @@ export default function RecordForm({ uid }: Props) {
                 type="button"
                 className="btn-remove"
                 onClick={() => removeItem(i)}
-                disabled={items.length === 1}
+                disabled={rows.length === 1}
               >
                 ✕
               </button>
