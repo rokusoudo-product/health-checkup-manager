@@ -6,12 +6,16 @@ import {
 import type { CollectionReference, DocumentData } from 'firebase/firestore'
 import { db } from './firebase'
 import type { ExaminationRecord, ItemMaster } from './types'
+import { recalcRecordsForMaster, referenceRangeChanged } from './lib/recalcAbnormal'
 
 const recordsRef = (uid: string) =>
   collection(db, 'users', uid, 'records')
 
 const mastersRef = (uid: string) =>
   collection(db, 'users', uid, 'itemMasters')
+
+// WriteBatch は1回あたり最大500件までしか操作できないため、500件ごとに分割してコミットする。
+const FIRESTORE_BATCH_LIMIT = 500
 
 // ── 診断記録 ────────────────────────────────────────────
 
@@ -51,9 +55,41 @@ export async function fetchMasters(uid: string): Promise<ItemMaster[]> {
   return snap.docs.map(d => ({ itemName: d.id, ...d.data() } as ItemMaster))
 }
 
+/**
+ * 項目マスターを保存する。
+ * 基準値（referenceMin / referenceMax）が実際に変化した場合のみ、
+ * Android の HealthRepository.upsertMaster()（Issue #8 / PR #11）と同じ判定で
+ * 該当項目名を含む既存記録を再計算し、Firestore 上の
+ * items[].referenceMin / referenceMax / isAbnormal を更新する
+ * （カテゴリ変更・お気に入りトグルのみでは記録を更新しない＝不要な全件書き込みを避ける）。
+ *
+ * Issue #50 の前提: 再計算は Web クライアント側で全記録を取得して走査する方式
+ * （Cloud Functions への移行は行わない）。判定ロジック自体は ./lib/recalcAbnormal.ts に
+ * 純関数として切り出してあるため、将来 Cloud Functions 側に寄せる場合もそのまま流用できる。
+ */
 export async function saveMaster(uid: string, master: ItemMaster): Promise<void> {
   const { itemName, ...rest } = master
-  await setDoc(doc(db, 'users', uid, 'itemMasters', itemName), rest)
+  const masterRef = doc(db, 'users', uid, 'itemMasters', itemName)
+  const previousSnap = await getDoc(masterRef)
+  const previous = previousSnap.exists()
+    ? (previousSnap.data() as Pick<ItemMaster, 'referenceMin' | 'referenceMax'>)
+    : null
+
+  await setDoc(masterRef, rest)
+
+  if (!referenceRangeChanged(previous, master)) return
+
+  const records = await fetchRecords(uid)
+  const updates = recalcRecordsForMaster(records, itemName, master.referenceMin, master.referenceMax)
+  if (updates.length === 0) return
+
+  for (let i = 0; i < updates.length; i += FIRESTORE_BATCH_LIMIT) {
+    const batch = writeBatch(db)
+    for (const update of updates.slice(i, i + FIRESTORE_BATCH_LIMIT)) {
+      batch.update(doc(db, 'users', uid, 'records', update.recordId), { items: update.items })
+    }
+    await batch.commit()
+  }
 }
 
 export async function deleteMaster(uid: string, itemName: string): Promise<void> {
@@ -61,8 +97,6 @@ export async function deleteMaster(uid: string, itemName: string): Promise<void>
 }
 
 // ── アカウント削除（Issue #34） ────────────────────────────
-
-const FIRESTORE_BATCH_LIMIT = 500
 
 /**
  * コレクション内の全ドキュメントを削除する。
