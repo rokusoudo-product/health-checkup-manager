@@ -170,8 +170,8 @@
 }
 
 .card {
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: var(--color-background);
+  border: 1px solid var(--color-outline);
   border-radius: 16px;
   padding: 48px 40px;
   width: 100%;
@@ -187,16 +187,19 @@ h1 {
   font-size: 28px;
   font-weight: 700;
   margin: 0;
-  color: #1a7a6e;
+  color: var(--color-primary);
 }
 
-.lead { color: var(--text); font-size: 15px; margin: 0; }
+.lead { color: var(--color-text-secondary); font-size: 15px; margin: 0; }
 
 .btn-google {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 12px 24px;
+  /* Google サインインボタンの標準配色（Google ブランドガイドライン指定色）。
+     プロダクトのブランドカラーではないため、DESIGN.md のトークンへは寄せず直書きのまま残す
+     （Issue #58）。--color-surface の #FFFFFF はたまたま同じ値になるだけで意味が異なるため代用しない */
   background: #fff;
   color: #3c4043;
   border: 1px solid #dadce0;
