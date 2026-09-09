@@ -68,7 +68,11 @@ class MigrationTest {
         createV1Database(context)
 
         val room = Room.databaseBuilder(context, HealthCheckupDatabase::class.java, dbName)
-            .addMigrations(HealthCheckupDatabase.MIGRATION_1_2, HealthCheckupDatabase.MIGRATION_2_3)
+            .addMigrations(
+                HealthCheckupDatabase.MIGRATION_1_2,
+                HealthCheckupDatabase.MIGRATION_2_3,
+                HealthCheckupDatabase.MIGRATION_3_4
+            )
             .allowMainThreadQueries()
             .build()
         try {
@@ -147,7 +151,7 @@ class MigrationTest {
         createV2Database(context)
 
         val room = Room.databaseBuilder(context, HealthCheckupDatabase::class.java, dbName)
-            .addMigrations(HealthCheckupDatabase.MIGRATION_2_3)
+            .addMigrations(HealthCheckupDatabase.MIGRATION_2_3, HealthCheckupDatabase.MIGRATION_3_4)
             .allowMainThreadQueries()
             .build()
         try {
@@ -163,6 +167,87 @@ class MigrationTest {
                 assertEquals("2025-06-01", record.date)
                 assertEquals(false, record.pushedToFirestore)
                 assertEquals(1, room.itemDao().getByRecordIdOnce(1L).size)
+            }
+        } finally {
+            room.close()
+            context.deleteDatabase(dbName)
+        }
+    }
+
+    /** Room v3 が生成していたスキーマを再現する（pushedToFirestore追加済み、remoteId はまだ無い） */
+    private fun createV3Database(context: Context) {
+        context.deleteDatabase(dbName)
+        val dbFile = context.getDatabasePath(dbName)
+        dbFile.parentFile?.mkdirs()
+        val db = SQLiteDatabase.openOrCreateDatabase(dbFile, null)
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `examination_records` " +
+                "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` TEXT NOT NULL, " +
+                "`facility` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, " +
+                "`pushedToFirestore` INTEGER NOT NULL DEFAULT 0)"
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `examination_items` " +
+                "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `recordId` INTEGER NOT NULL, " +
+                "`itemName` TEXT NOT NULL, `value` TEXT NOT NULL, `unit` TEXT NOT NULL, " +
+                "`referenceMin` REAL, `referenceMax` REAL, `isAbnormal` INTEGER NOT NULL, " +
+                "FOREIGN KEY(`recordId`) REFERENCES `examination_records`(`id`) " +
+                "ON UPDATE NO ACTION ON DELETE CASCADE)"
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_examination_items_recordId` ON `examination_items` (`recordId`)")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `item_masters` " +
+                "(`itemName` TEXT NOT NULL, `unit` TEXT NOT NULL, `referenceMin` REAL, `referenceMax` REAL, " +
+                "`category` TEXT NOT NULL DEFAULT 'その他', `isFavorite` INTEGER NOT NULL DEFAULT 0, " +
+                "`favoritedAt` INTEGER, `pushedToFirestore` INTEGER NOT NULL DEFAULT 0, " +
+                "PRIMARY KEY(`itemName`))"
+        )
+        // v3時代（Issue #49移行前）に保存済みの記録。Firestoreのドキュメント ID はこのRoom idの
+        // 文字列表現がそのまま使われていた（FirestoreRepository.saveRecord の旧実装）。
+        db.execSQL(
+            "INSERT INTO examination_records (id, date, facility, createdAt, pushedToFirestore) " +
+                "VALUES (7, '2025-06-01', 'テスト病院', 1000, 1)"
+        )
+        db.execSQL(
+            "INSERT INTO examination_items (recordId, itemName, value, unit, referenceMin, referenceMax, isAbnormal) " +
+                "VALUES (7, 'LDLコレステロール', '150', 'mg/dL', NULL, 139.0, 1)"
+        )
+        db.version = 3
+        db.close()
+    }
+
+    /**
+     * Room v3→v4 Migration のテスト（Issue #49）。
+     *
+     * - remoteId カラムが追加されること
+     * - 既存行（移行前に作成された記録）には remoteId として id の文字列表現がそのまま入り、
+     *   既存のFirestoreドキュメントとの対応が壊れないこと（一括移行はしない共存方式）
+     * - 既存データ（診断記録・検査項目）自体は一切失われないこと
+     */
+    @Test
+    fun `v3からv4への移行で既存行のremoteIdにはidの文字列表現が入る`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        createV3Database(context)
+
+        val room = Room.databaseBuilder(context, HealthCheckupDatabase::class.java, dbName)
+            .addMigrations(HealthCheckupDatabase.MIGRATION_3_4)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            runBlocking {
+                val record = room.recordDao().getById(7L)!!
+                assertEquals("2025-06-01", record.date)
+                // Issue #49: 既存行のremoteIdには、移行前のFirestoreドキュメントID
+                // （Roomのid.toString()）がそのまま入り、既存ドキュメントとの対応を壊さない
+                assertEquals("7", record.remoteId)
+                assertEquals(true, record.pushedToFirestore)
+
+                // remoteIdキーでも同じ行が引けること（restoreFromFirestoreの突き合わせに使う）
+                val byRemoteId = room.recordDao().getByRemoteId("7")
+                assertEquals(7L, byRemoteId!!.id)
+
+                // 既存データ自体は失われない
+                assertEquals(1, room.itemDao().getByRecordIdOnce(7L).size)
             }
         } finally {
             room.close()

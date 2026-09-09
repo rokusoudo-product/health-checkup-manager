@@ -18,8 +18,11 @@ interface HealthCloudSync {
      * Issue #47: 診断記録を1件、Firestoreから削除する。
      * 失敗時は例外をそのまま呼び出し元（HealthRepository.deleteRecord）へ伝播させる
      * （オフライン時などに握りつぶすと Room だけ削除されFirestore側に残り続けるため）。
+     *
+     * Issue #49: 引数はRoomのローカルidではなく、Firestoreドキュメント ID である
+     * [com.rokusoudo.healthcheckup.data.db.entity.ExaminationRecord.remoteId] を渡すこと。
      */
-    suspend fun deleteRecord(uid: String, recordId: Long)
+    suspend fun deleteRecord(uid: String, remoteId: String)
 
     /**
      * Issue #34: アカウント削除機能用。

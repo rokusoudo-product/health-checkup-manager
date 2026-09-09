@@ -13,8 +13,13 @@ import kotlinx.coroutines.withTimeout
 
 /**
  * Cloud Firestore との読み書きを担当する Repository。
- * データパス: users/{uid}/records/{roomId}
+ * データパス: users/{uid}/records/{remoteId}
  *             users/{uid}/itemMasters/{itemName}
+ *
+ * Issue #49: records のドキュメント ID は端末ローカルの Room id ではなく
+ * [ExaminationRecord.remoteId]（グローバルに一意な UUID）を使う。
+ * 既存の数値IDドキュメント（移行前に作成された記録）とは共存し、一括移行はしない
+ * （詳細は [com.rokusoudo.healthcheckup.data.db.HealthCheckupDatabase.MIGRATION_3_4] 参照）。
  *
  * 薬事法対応: 保存・取得はデータの表示目的のみ。医療診断に使用しない。
  */
@@ -30,7 +35,8 @@ class FirestoreRepository : HealthCloudSync {
 
     /**
      * 診断記録をFirestoreに保存する。
-     * ドキュメントID = Room の recordId（文字列）でクロスプラットフォーム同期を担保。
+     * ドキュメントID = [ExaminationRecord.remoteId]（UUID。Issue #49でRoomのローカルidから変更）。
+     * これによりRoomのidが端末間で衝突しても、Firestore上のドキュメントは衝突しない。
      */
     override suspend fun saveRecord(uid: String, record: ExaminationRecord, items: List<ExaminationItem>) {
         val data = mapOf(
@@ -48,7 +54,7 @@ class FirestoreRepository : HealthCloudSync {
                 )
             }
         )
-        recordsRef(uid).document(record.id.toString()).set(data).await()
+        recordsRef(uid).document(record.remoteId).set(data).await()
     }
 
     /**
@@ -70,22 +76,39 @@ class FirestoreRepository : HealthCloudSync {
 
     /**
      * Firestoreから全診断記録を取得する（他端末データ復元用）。
+     *
+     * Issue #49: ドキュメントID（[ExaminationRecord.remoteId]）は数値ID（移行前の既存記録）と
+     * UUID（移行後の新規記録）の2形式が混在し得るため、[doc.id] を Long に変換できない
+     * ドキュメントを黙って捨てていた従来の実装（`doc.id.toLongOrNull() ?: return@mapNotNull null`）
+     * を廃止した。この判定を残したままUUIDを導入すると、新形式のドキュメントが
+     * fetchRecords() の結果から全て消え、restoreFromFirestore() の差分ミラー削除により
+     * 他端末で保存した新形式の記録がRoomから誤って削除されてしまう。
+     *
+     * 返却する [ExaminationRecord.id] は端末ローカルの主キーであり、Firestore側には存在しない情報
+     * のため 0（未確定）を設定する。実際のローカルidは呼び出し元（HealthRepository.restoreFromFirestore）が
+     * [ExaminationRecord.remoteId] をキーに端末ローカルの既存行と突き合わせたうえで確定する。
+     * 同様に [ExaminationItem.recordId] もこの時点では確定しないため 0 を設定する。
      */
     override suspend fun fetchRecords(uid: String): List<Pair<ExaminationRecord, List<ExaminationItem>>> {
         val snapshot = recordsRef(uid).get().await()
         return snapshot.documents.mapNotNull { doc ->
-            val id = doc.id.toLongOrNull() ?: return@mapNotNull null
             val date = doc.getString("date") ?: return@mapNotNull null
             val facility = doc.getString("facility") ?: ""
             val createdAt = doc.getLong("createdAt") ?: System.currentTimeMillis()
-            val record = ExaminationRecord(id = id, date = date, facility = facility, createdAt = createdAt)
+            val record = ExaminationRecord(
+                id = 0,
+                date = date,
+                facility = facility,
+                createdAt = createdAt,
+                remoteId = doc.id
+            )
 
             @Suppress("UNCHECKED_CAST")
             val itemsData = doc.get("items") as? List<Map<String, Any?>> ?: emptyList()
             val items = itemsData.map { map ->
                 ExaminationItem(
                     id = 0,
-                    recordId = id,
+                    recordId = 0,
                     itemName = map["itemName"] as? String ?: "",
                     value = map["value"] as? String ?: "",
                     unit = map["unit"] as? String ?: "",
@@ -100,7 +123,8 @@ class FirestoreRepository : HealthCloudSync {
 
     /**
      * Issue #47: 診断記録を1件、Firestoreから削除する。
-     * ドキュメントID = Room の recordId（文字列）。失敗時は例外を呼び出し元へ伝播する。
+     * ドキュメントID = [ExaminationRecord.remoteId]（Issue #49でRoomのローカルidから変更）。
+     * 失敗時は例外を呼び出し元へ伝播する。
      *
      * Firestore SDK はデフォルトでオフライン永続化が有効なため、オフライン時の
      * delete().await() はネットワーク復帰まで完了しない（すぐには例外を投げない）。
@@ -111,9 +135,9 @@ class FirestoreRepository : HealthCloudSync {
      * HealthRepository側のcatchに流す。タイムアウト後もSDKに削除自体はキューされ得るが、
      * その場合はIssue #46（方式A）の次回restoreFromFirestoreの差分ミラー削除がRoom側を追従させる。
      */
-    override suspend fun deleteRecord(uid: String, recordId: Long) {
+    override suspend fun deleteRecord(uid: String, remoteId: String) {
         withTimeout(DELETE_TIMEOUT_MS) {
-            recordsRef(uid).document(recordId.toString()).delete().await()
+            recordsRef(uid).document(remoteId).delete().await()
         }
     }
 

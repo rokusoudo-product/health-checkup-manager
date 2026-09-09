@@ -110,11 +110,21 @@ class HealthRepositorySignOutTest {
         repository.clearLocalDataOnSignOut()
 
         // Firestoreには記録とカスタマイズ済み項目マスターが保存されている想定
+        // Issue #49: 復元後の端末ローカルidはRoomのAUTOINCREMENTに委ねられる（サインアウト前に
+        // 別の記録が既に採番されているため、必ずしも1になるとは限らない）。そのため、
+        // フェッチ結果側の record.id ではなく remoteId（FirestoreドキュメントID）をキーに検証する。
+        val fetchedRemoteId = "web-record-1"
         cloudSync.recordsToReturn = listOf(
-            ExaminationRecord(id = 1L, date = "2026-08-01", facility = "六創堂クリニック", createdAt = 2000L) to
+            ExaminationRecord(
+                id = 0,
+                date = "2026-08-01",
+                facility = "六創堂クリニック",
+                createdAt = 2000L,
+                remoteId = fetchedRemoteId
+            ) to
                 listOf(
                     ExaminationItem(
-                        recordId = 1L,
+                        recordId = 0,
                         itemName = "LDLコレステロール",
                         value = "150",
                         unit = "mg/dL",
@@ -130,9 +140,10 @@ class HealthRepositorySignOutTest {
 
         repository.restoreFromFirestore("test-uid")
 
-        val restoredRecord = db.recordDao().getById(1L)
+        val restoredRecord = db.recordDao().getByRemoteId(fetchedRemoteId)
         assertTrue(restoredRecord != null)
         assertEquals("六創堂クリニック", restoredRecord!!.facility)
+        assertEquals(1, db.itemDao().getByRecordIdOnce(restoredRecord.id).size)
         val restoredMaster = db.masterDao().getByName("LDLコレステロール")
         assertTrue(restoredMaster != null)
         assertEquals(true, restoredMaster!!.isFavorite)
@@ -168,7 +179,7 @@ class HealthRepositorySignOutTest {
             return mastersToReturn
         }
 
-        override suspend fun deleteRecord(uid: String, recordId: Long) {
+        override suspend fun deleteRecord(uid: String, remoteId: String) {
             // 本テストでは未使用（Issue #47）
         }
 

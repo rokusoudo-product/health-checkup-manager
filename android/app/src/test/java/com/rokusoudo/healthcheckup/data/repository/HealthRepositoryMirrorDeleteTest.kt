@@ -242,7 +242,7 @@ class HealthRepositoryMirrorDeleteTest {
             // Issue #46 のミラー削除テストの対象外（Issue #34 のアカウント削除専用メソッド）
         }
 
-        override suspend fun deleteRecord(uid: String, recordId: Long) {
+        override suspend fun deleteRecord(uid: String, remoteId: String) {
             // Issue #46 のミラー削除テストの対象外（Issue #47 の記録1件削除専用メソッド）
         }
     }

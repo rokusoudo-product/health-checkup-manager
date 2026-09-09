@@ -3,8 +3,8 @@ package com.rokusoudo.healthcheckup.data.db.dao
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.rokusoudo.healthcheckup.data.db.entity.ExaminationRecord
 import kotlinx.coroutines.flow.Flow
 
@@ -14,9 +14,12 @@ interface ExaminationRecordDao {
     @Insert
     suspend fun insert(record: ExaminationRecord): Long
 
-    /** Firestore復元時に既存レコードをIDで上書きする */
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(record: ExaminationRecord): Long
+    /**
+     * Issue #49: restoreFromFirestore() で remoteId をキーに既存の端末ローカル記録を
+     * 更新する（端末ローカルの id はそのまま維持する）。
+     */
+    @Update
+    suspend fun update(record: ExaminationRecord)
 
     @Delete
     suspend fun delete(record: ExaminationRecord)
@@ -27,19 +30,30 @@ interface ExaminationRecordDao {
     @Query("SELECT * FROM examination_records WHERE id = :id")
     suspend fun getById(id: Long): ExaminationRecord?
 
+    /**
+     * Issue #49: Firestoreドキュメント ID（[ExaminationRecord.remoteId]）をキーに
+     * 端末ローカルの記録を検索する。restoreFromFirestore() の upsert 判定に使う
+     * （端末ローカルの [ExaminationRecord.id] は端末ごとに異なり得るため、これで突き合わせる）。
+     */
+    @Query("SELECT * FROM examination_records WHERE remoteId = :remoteId")
+    suspend fun getByRemoteId(remoteId: String): ExaminationRecord?
+
     /** Issue #46: Firestoreへのpushが成功した記録に確認フラグを立てる。 */
     @Query("UPDATE examination_records SET pushedToFirestore = 1 WHERE id = :id")
     suspend fun markPushed(id: Long)
 
     /**
      * Issue #46: 差分ミラー削除。push済み（pushedToFirestore = 1）かつ、
-     * 直近の restoreFromFirestore の fetch 結果（[keepIds]）に含まれない
+     * 直近の restoreFromFirestore の fetch 結果（[keepRemoteIds]）に含まれない
      * ＝Firestore側で削除された記録を Room からも削除する。
      * push未確認（オフライン保存直後等）の記録は対象外のため誤って消えない。
      * 削除は examination_items へ ON DELETE CASCADE で伝播する。
+     *
+     * Issue #49: 端末ローカルの [ExaminationRecord.id] は端末間で衝突し得るため、
+     * 判定キーは Firestore ドキュメント ID である [ExaminationRecord.remoteId] を用いる。
      */
-    @Query("DELETE FROM examination_records WHERE pushedToFirestore = 1 AND id NOT IN (:keepIds)")
-    suspend fun deleteMirrored(keepIds: List<Long>)
+    @Query("DELETE FROM examination_records WHERE pushedToFirestore = 1 AND remoteId NOT IN (:keepRemoteIds)")
+    suspend fun deleteMirrored(keepRemoteIds: List<String>)
 
     /**
      * Issue #34: アカウント削除機能用。端末内の全診断記録を削除する。

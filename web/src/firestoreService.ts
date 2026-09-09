@@ -36,7 +36,12 @@ export async function saveRecord(
   record: Omit<ExaminationRecord, 'id' | 'createdAt'>,
   existingId?: string,
 ): Promise<string> {
-  const id = existingId ?? String(Date.now())
+  // Issue #49: 新規記録のドキュメントIDはグローバルに一意なUUIDにする。
+  // 従来の Date.now()（13桁ミリ秒）は同時刻に近い操作で衝突しうる採番ではないが、
+  // Android側もRoomのローカル連番からUUID（remoteId）へ切り替えたため、プラットフォーム間で
+  // 採番方式を揃える（既存ドキュメントの一括書き換えは行わない。数値IDとUUIDは共存する）。
+  // createdAt の挙動（編集時にserverTimestamp()で上書きする点）は Issue #75 のスコープのため変更しない。
+  const id = existingId ?? crypto.randomUUID()
   await setDoc(doc(db, 'users', uid, 'records', id), {
     ...record,
     createdAt: serverTimestamp(),

@@ -182,9 +182,13 @@ class HealthRepository(
      */
     suspend fun deleteRecord(recordId: Long): Result<Unit> {
         val uid = currentUidProvider()
-        if (uid != null) {
+        // Issue #49: FirestoreドキュメントIDはremoteId。削除対象の記録が既にRoomに無い場合は
+        // remoteIdを解決できないため、Firestore側の削除は試みずローカルの削除のみ行う
+        // （元々存在しないIDへの呼び出しなので、下のトランザクションもno-opで成功する）。
+        val record = db.recordDao().getById(recordId)
+        if (uid != null && record != null) {
             try {
-                firestoreRepository.deleteRecord(uid, recordId)
+                firestoreRepository.deleteRecord(uid, record.remoteId)
             } catch (e: Exception) {
                 return Result.failure(e)
             }
@@ -254,12 +258,29 @@ class HealthRepository(
         }
 
         // 診断記録を復元。Firestoreのfetchで確認できた時点でpush済みとみなしフラグを立てる
+        //
+        // Issue #49: 端末ローカルの ExaminationRecord.id は端末ごとに独立して採番されるため、
+        // 複数端末間で同じ id が別々の記録を指し得る。そのため upsert の突き合わせキーには
+        // Firestoreドキュメント ID である remoteId を使う（端末ローカルの id ではない）。
+        // - remoteId に一致する行が既にRoomにあれば、その行の端末ローカル id を維持したまま内容を更新する
+        //   （id を上書きすると、他の外部キー参照や端末ローカルの識別が壊れるため）。
+        // - なければ新規行として挿入し、Room に端末ローカルの id を新規採番させる
+        //   （Firestore側のドキュメントIDをそのままRoomのidに使うと、旧方式と同じ端末間衝突を
+        //   再現しかねないため、意図的に別空間として扱う）。
         for ((record, items) in records) {
-            db.recordDao().upsert(record.copy(pushedToFirestore = true))
-            db.itemDao().deleteByRecordId(record.id)
-            db.itemDao().insertAll(items)
+            val existing = db.recordDao().getByRemoteId(record.remoteId)
+            val localId = if (existing != null) {
+                db.recordDao().update(record.copy(id = existing.id, pushedToFirestore = true))
+                existing.id
+            } else {
+                db.recordDao().insert(record.copy(id = 0, pushedToFirestore = true))
+            }
+            db.itemDao().deleteByRecordId(localId)
+            db.itemDao().insertAll(items.map { it.copy(recordId = localId) })
         }
-        db.recordDao().deleteMirrored(records.map { it.first.id })
+        // Issue #49: 差分ミラー削除もremoteIdキーで判定する（端末ローカルidでは他端末の記録と
+        // 衝突しうるため、「Firestore側に存在するか」を正しく判定できない）。
+        db.recordDao().deleteMirrored(records.map { it.first.remoteId })
 
         // 項目マスターを復元。記録と同様にfetchで確認できたものはpush済み扱いにする
         for (master in masters) {
