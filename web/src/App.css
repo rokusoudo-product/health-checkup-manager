@@ -104,9 +104,9 @@
 }
 
 .modal-card {
-  background: var(--bg);
-  color: var(--text-h);
-  border: 1px solid var(--border);
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-outline);
   border-radius: 16px;
   padding: 28px;
   width: 100%;
@@ -116,12 +116,12 @@
 }
 .modal-card h2 { margin: 0 0 12px; font-size: 18px; }
 
-.modal-message { color: var(--text); font-size: 14px; margin: 0 0 12px; line-height: 1.6; white-space: pre-line; }
+.modal-message { color: var(--color-text-secondary); font-size: 14px; margin: 0 0 12px; line-height: 1.6; white-space: pre-line; }
 
 .modal-list {
   margin: 0 0 16px;
   padding-left: 20px;
-  color: var(--text-h);
+  color: var(--color-text-primary);
   font-size: 14px;
   line-height: 1.8;
 }
@@ -457,7 +457,7 @@ h2 {
 
 /* ── 項目マスター ────────────────────────────────────── */
 
-.note-small { font-size: 13px; color: var(--text); margin: -12px 0 20px; }
+.note-small { font-size: 13px; color: var(--color-text-secondary); margin: -12px 0 20px; }
 
 .master-form { margin-bottom: 24px; }
 .master-form-row {
@@ -472,11 +472,11 @@ h2 {
 
 .master-form-row input {
   padding: 10px 12px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-outline);
   border-radius: 8px;
   font-size: 14px;
-  background: var(--bg);
-  color: var(--text-h);
+  background: var(--color-background);
+  color: var(--color-text-primary);
   width: 100%;
   box-sizing: border-box;
 }
@@ -494,18 +494,18 @@ h2 {
 
 .trend-item-select {
   padding: 10px 12px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-outline);
   border-radius: 8px;
   font-size: 14px;
-  background: var(--bg);
-  color: var(--text-h);
+  background: var(--color-background);
+  color: var(--color-text-primary);
   min-width: 200px;
 }
 
 .trend-period-tabs {
   display: flex;
   gap: 4px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-outline);
   border-radius: 8px;
   padding: 3px;
 }
@@ -516,7 +516,7 @@ h2 {
   border-radius: 6px;
   padding: 6px 16px;
   font-size: 13px;
-  color: var(--text);
+  color: var(--color-text-secondary);
   cursor: pointer;
 }
 /* アクティブ状態は primary トークンの文字色＋枠線で表現し、白文字とのコントラスト計算不要にする */
@@ -544,23 +544,23 @@ h2 {
 .abnormal-table th {
   text-align: left;
   padding: 10px 12px;
-  border-bottom: 2px solid var(--border);
-  color: var(--text);
+  border-bottom: 2px solid var(--color-outline);
+  color: var(--color-text-secondary);
   font-weight: 600;
   white-space: nowrap;
 }
 .abnormal-table td {
   padding: 10px 12px;
-  border-bottom: 1px solid var(--border);
-  color: var(--text-h);
+  border-bottom: 1px solid var(--color-outline);
+  color: var(--color-text-primary);
 }
 .abnormal-table .val { font-weight: 700; color: var(--color-error); }
-.abnormal-table .ref { color: var(--text); font-size: 13px; }
+.abnormal-table .ref { color: var(--color-text-secondary); font-size: 13px; }
 
 .abnormal-row { cursor: pointer; }
 .abnormal-row:hover,
 .abnormal-row:focus-visible {
-  background: var(--border);
+  background: var(--color-outline);
   outline: none;
 }
 

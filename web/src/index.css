@@ -21,13 +21,6 @@
 
   --code-bg: #f4f3ec;
 
-  /* 移行用エイリアス（Issue #56）。web/src/App.css から旧トークン名で計47箇所参照されているため、
-     新トークンの別名として定義を残す。撤去は画面別置き換えが完了した最後の Issue（#60）が担当する */
-  --text-h: var(--color-text-primary);
-  --text: var(--color-text-secondary);
-  --bg: var(--color-background);
-  --border: var(--color-outline);
-
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
@@ -35,8 +28,8 @@
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
   color-scheme: light;
-  color: var(--text);
-  background: var(--bg);
+  color: var(--color-text-secondary);
+  background: var(--color-background);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -52,7 +45,7 @@
   max-width: 100%;
   margin: 0 auto;
   text-align: center;
-  border-inline: 1px solid var(--border);
+  border-inline: 1px solid var(--color-outline);
   min-height: 100svh;
   display: flex;
   flex-direction: column;
@@ -67,7 +60,7 @@ h1,
 h2 {
   font-family: var(--heading);
   font-weight: 500;
-  color: var(--text-h);
+  color: var(--color-text-primary);
 }
 
 h1 {
@@ -97,7 +90,7 @@ code,
   font-family: var(--mono);
   display: inline-flex;
   border-radius: 4px;
-  color: var(--text-h);
+  color: var(--color-text-primary);
 }
 
 code {
