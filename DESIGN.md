@@ -24,6 +24,10 @@
 | success | #2E7D32 | #81C784 | 成功 |
 | favorite | #D32F2F | #EF5350 | お気に入り♥（ON時） |
 | outline | #e5e4e7 | 未定義 | 枠線（2026-09-08 追記, Issue #56。Web の `--border` 用に新設。現行 Web の値 `#e5e4e7` をそのまま採用し、背景 `#FAFDFC` に対して枠線として視認できることを確認した。Android では未使用のためダーク値は未定義） |
+| on-primary | #FFFFFF | 未定義 | primary 背景上の文字色（2026-09-09 追記, Issue #57。Web専用。Android colors.xml の既存 `on_primary`（#FFFFFFFF）と同値のため、Android 側の新規追記は不要と判断。ダークは Web 対象外のため未定義） |
+| primary-hover | #00595C | 未定義 | primary 系コントロールの hover/pressed 背景（2026-09-09 追記, Issue #57。Web専用。確定 primary `#00696C` を基準に、`color-mix(in srgb, var(--color-primary) 85%, black)` 相当（primary 85% + 黒 15%）で算出。旧 Web 実装の `#155f55` は旧 primary `#1a7a6e` から導出された値のため系統が異なり、そのまま採用していない。ダークは Web 対象外のため未定義） |
+| disabled | #aaaaaa | 未定義 | 無効状態の背景・主張を抑えたアイコン文字色（2026-09-09 追記, Issue #57。Web専用。現行 Web の値 `#aaa` をそのまま採用。WCAG 1.4.3 は無効化されたUIコンポーネントを対象外としているためコントラスト要件の対象外。ダークは Web 対象外のため未定義） |
+| hover-neutral | #f5f5f5 | 未定義 | ニュートラル系ボタン（`.btn-secondary` 等）の hover 背景（2026-09-09 追記, Issue #57。Web専用。現行 Web の値 `#f5f5f5` をそのまま採用。ダークは Web 対象外のため未定義） |
 
 ### カテゴリカラー（検査項目の文字・枠色。2026-07-18 決定 Q1）
 
@@ -77,7 +81,7 @@ Web（`web/`）で新規に追加する画面は、Android と同じ意味のト
   Android は `res/values/colors.xml` / `res/values-night/colors.xml` の2本立てでダークモードに対応しているため、**Android はダーク対応・Web はライト固定**という差異が生じる。これは意図した判断であり、Web のダーク対応漏れではない。
 - 定義場所: `web/src/index.css` の `:root`（ライト値のみ）
 - 命名: `--color-<トークン名>`（Android のトークン表と同じ名前を使う）
-- 現時点で定義済みのトークン（ライト値のみ。Issue #56 で `primary` / `error` 以外を追加）:
+- 現時点で定義済みのトークン（ライト値のみ。Issue #56 で `primary` / `error` 以外を追加。Issue #57 で `on-primary` / `primary-hover` / `disabled` / `hover-neutral` を追加）:
 
 | CSS変数 | トークン | ライト | 用途 |
 |--------|---------|-------|------|
@@ -91,12 +95,17 @@ Web（`web/`）で新規に追加する画面は、Android と同じ意味のト
 | `--color-success` | success | #2E7D32 | 成功 |
 | `--color-favorite` | favorite | #D32F2F | お気に入り♥（ON時） |
 | `--color-outline` | outline | #e5e4e7 | 枠線 |
+| `--color-on-primary` | on-primary | #FFFFFF | navbar・`.btn-primary`・`.btn-logout` など primary 背景上の文字色（2026-09-09 追記, Issue #57） |
+| `--color-primary-hover` | primary-hover | #00595C | `.btn-primary:hover` の背景（2026-09-09 追記, Issue #57） |
+| `--color-disabled` | disabled | #aaaaaa | `.btn-primary:disabled` の背景 / `.btn-remove` の既定文字色（2026-09-09 追記, Issue #57） |
+| `--color-hover-neutral` | hover-neutral | #f5f5f5 | `.btn-secondary:hover` の背景（2026-09-09 追記, Issue #57） |
 
 - 通常の CSS（`color` / `background` 等）では `var(--color-primary)` のようにそのまま参照する
 - **Canvas 描画（Chart.js 等）では `var()` がブラウザの Canvas 2D API 上で解決されないため**、`getComputedStyle(document.documentElement).getPropertyValue('--color-primary')` で実測値の文字列を取得してから渡す（`web/src/components/TrendChart.tsx` 参照）
 - 新規トークンが必要になったら、この表と Android 側のカラートークン表の両方に追記し、値を一致させる
 - 既存 Web 4画面のうち `ItemMasters` と経年グラフ画面は既にトークン化済みで直書きは0件。残る `RecordList` / `RecordDetail` / `RecordForm` の直書きカラーコードの是正は、本トークン基盤（Issue #56）を前提として画面別の後続 Issue #57〜#60 が担当する
 - 移行用エイリアス（`--text-h` / `--text` / `--bg` / `--border`）: `App.css` の既存参照が壊れないよう、新トークンの `var()` 別名として `index.css` に残置している。画面別の置き換えが完了した最後の Issue（#60）が撤去する
+- **外部ブランド由来の色は例外として直書きを許容する**（2026-09-09 追記, Issue #58）: `.btn-google`（Google サインインボタン）の配色 `#fff` / `#3c4043` / `#dadce0` は Google ブランドガイドラインの指定色であり、プロダクトのブランドカラーではないため、トークンへ機械的に寄せない。直書きのまま残し、理由をコード側のコメントで明示する。`--color-surface` の `#FFFFFF` とはたまたま同じ値になるだけで意味が異なるため代用しない
 
 ## プロジェクト固有ルール
 
