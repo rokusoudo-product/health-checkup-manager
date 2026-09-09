@@ -57,6 +57,13 @@
 - **Web**: Firestore を直接参照（ローカルキャッシュ不要、MVP段階）
 - **認証**: 両プラットフォームとも Firebase Auth（同一プロジェクト）でユーザーIDを共有
 - **データ分離**: Firestoreのパス `users/{uid}/records/{recordId}` でユーザーごとに分離
+  - **Issue #49（2026-09）**: `{recordId}` は Android の Room ローカルAUTOINCREMENT連番ではなく、
+    グローバルに一意な ID（Android: `ExaminationRecord.remoteId`＝UUID v4 / Web: `crypto.randomUUID()`）。
+    同じアカウントで複数端末を使うと端末ローカル連番が端末間で衝突し、`saveRecord()` の
+    `set()`（mergeなし）で片方の記録が上書き消失する不具合があったため変更した。
+    移行前に作成された既存ドキュメント（数値ID）は書き換えず、数値IDとUUIDが共存する
+    （一括移行は健診データの復旧困難リスクを避けるため行わない。
+    `HealthCheckupDatabase.MIGRATION_3_4` 参照）。
 
 ### フェーズ分割
 
@@ -193,10 +200,12 @@ flowchart TB
 
 ```
 ExaminationRecord（診断記録）
-├── id: Long (PK)
+├── id: Long (PK、端末ローカル。Room AUTOINCREMENT)
 ├── date: LocalDate（受診日）
 ├── facility: String（医療機関名、任意）
 ├── createdAt: Instant
+├── pushedToFirestore: Boolean（Firestoreへのpushが確認できているか。Issue #46）
+├── remoteId: String（UNIQUE。Firestoreドキュメント ID。UUID v4。Issue #49）
 └── [1:N] → ExaminationItem
 
 ExaminationItem（検査項目）
@@ -225,7 +234,7 @@ ItemMaster（項目マスター）
 
 ```
 users/{uid}/
-  ├── records/{recordId}/
+  ├── records/{recordId}/    ← recordId = remoteId（UUID v4。既存の数値IDドキュメントとは共存。Issue #49）
   │     ├── date: Timestamp
   │     ├── facility: String
   │     ├── createdAt: Timestamp

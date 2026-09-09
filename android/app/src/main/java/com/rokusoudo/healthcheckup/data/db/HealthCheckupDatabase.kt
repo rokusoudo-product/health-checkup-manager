@@ -16,7 +16,7 @@ import com.rokusoudo.healthcheckup.data.db.entity.ItemMaster
 
 @Database(
     entities = [ExaminationRecord::class, ExaminationItem::class, ItemMaster::class],
-    version = 3
+    version = 4
 )
 abstract class HealthCheckupDatabase : RoomDatabase() {
     abstract fun recordDao(): ExaminationRecordDao
@@ -123,6 +123,43 @@ abstract class HealthCheckupDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v3→v4（Issue #49）: examination_records に、Firestoreドキュメント ID として使う
+         * グローバルに一意な [ExaminationRecord.remoteId] を追加する。
+         *
+         * 背景: これまで Firestore のドキュメント ID には Room の AUTOINCREMENT 連番
+         * （[ExaminationRecord.id] の文字列表現）をそのまま使っていた。この連番は端末ローカルの
+         * 採番空間のため、同じ Google アカウントで Android 端末を2台使うと、両方の端末が
+         * 独立に同じ番号（例: id=2）を採番し得る。その結果 Firestore 上で同じドキュメント ID に
+         * 書き込みが競合し、`set()`（mergeなし）により片方の健診記録が完全に上書きされ消失する
+         * （Issue #49 本文の再現シナリオ）。
+         *
+         * 対応方針（Issue #49「未解決の質問」への回答・共存方式を採用）:
+         * - 既存の数値IDドキュメントを新IDへ書き換える一括移行は行わない。
+         *   Firestore上の全記録を読み直して新IDで書き直し旧IDを削除する操作は、
+         *   健診データという機微データに対して途中失敗時の復旧が困難なため。
+         * - 代わりに、既存行の [ExaminationRecord.remoteId] には現在の [ExaminationRecord.id] の
+         *   文字列表現をそのまま入れる。これにより既存のFirestoreドキュメントとの対応
+         *   （ドキュメントID＝移行前のid.toString()）は変更後も壊れない。
+         * - 新規作成される記録のみ、Kotlin側のデフォルト値（UUID.randomUUID()）により
+         *   グローバルに一意なIDが採番される（[FirestoreRepository.saveRecord] 参照）。
+         * - この結果、Firestore上のドキュメントIDは「数値ID（移行前からの既存記録）」と
+         *   「UUID（移行後の新規記録）」の2形式が混在するが、[remoteId] をキーにすれば
+         *   Android側の読み出し・突き合わせは形式によらず統一的に扱える。
+         *
+         * UNIQUE インデックスを付与し、同一端末内で remoteId が重複しないことをDBレベルでも担保する。
+         */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE examination_records ADD COLUMN remoteId TEXT NOT NULL DEFAULT ''")
+                db.execSQL("UPDATE examination_records SET remoteId = CAST(id AS TEXT)")
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS index_examination_records_remoteId " +
+                        "ON examination_records(remoteId)"
+                )
+            }
+        }
+
         private val PREPOPULATE_CALLBACK = object : RoomDatabase.Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {
                 super.onCreate(db)
@@ -147,7 +184,7 @@ abstract class HealthCheckupDatabase : RoomDatabase() {
                     "health_checkup.db"
                 )
                     .addCallback(PREPOPULATE_CALLBACK)
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .build().also { INSTANCE = it }
             }
         }

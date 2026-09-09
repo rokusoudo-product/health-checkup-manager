@@ -83,6 +83,7 @@ class HealthRepositoryDeleteTest {
     @Test
     fun `Firestore削除が成功すると記録と検査項目がRoomから削除される`() = runBlocking {
         val recordId = insertRecordWithItems()
+        val remoteId = db.recordDao().getById(recordId)!!.remoteId
         val repository = HealthRepository(db, cloudSync, currentUidProvider = { "test-uid" })
 
         val result = repository.deleteRecord(recordId)
@@ -91,7 +92,8 @@ class HealthRepositoryDeleteTest {
         assertNull(db.recordDao().getById(recordId))
         // 孤児レコードが残らないこと（examination_items）
         assertTrue(db.itemDao().getByRecordIdOnce(recordId).isEmpty())
-        assertEquals(listOf(recordId), cloudSync.deletedRecordIds)
+        // Issue #49: Firestoreへの削除呼び出しはRoomのローカルidではなくremoteId（ドキュメントID）で行われる
+        assertEquals(listOf(remoteId), cloudSync.deletedRemoteIds)
     }
 
     @Test
@@ -119,7 +121,7 @@ class HealthRepositoryDeleteTest {
 
         assertTrue(result.isSuccess)
         assertNull(db.recordDao().getById(recordId))
-        assertTrue(cloudSync.deletedRecordIds.isEmpty())
+        assertTrue(cloudSync.deletedRemoteIds.isEmpty())
     }
 
     @Test
@@ -146,7 +148,7 @@ class HealthRepositoryDeleteTest {
 
     private class FakeHealthCloudSync : HealthCloudSync {
         var shouldThrowOnDelete: Boolean = false
-        val deletedRecordIds = mutableListOf<Long>()
+        val deletedRemoteIds = mutableListOf<String>()
 
         override suspend fun saveRecord(uid: String, record: ExaminationRecord, items: List<ExaminationItem>) {
             // 本テストでは未使用
@@ -161,9 +163,9 @@ class HealthRepositoryDeleteTest {
 
         override suspend fun fetchItemMasters(uid: String): List<ItemMaster> = emptyList()
 
-        override suspend fun deleteRecord(uid: String, recordId: Long) {
+        override suspend fun deleteRecord(uid: String, remoteId: String) {
             if (shouldThrowOnDelete) throw RuntimeException("Firestore unavailable")
-            deletedRecordIds.add(recordId)
+            deletedRemoteIds.add(remoteId)
         }
 
         override suspend fun deleteAllUserData(uid: String) {
