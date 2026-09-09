@@ -104,7 +104,7 @@ Web（`web/`）で新規に追加する画面は、Android と同じ意味のト
 - **Canvas 描画（Chart.js 等）では `var()` がブラウザの Canvas 2D API 上で解決されないため**、`getComputedStyle(document.documentElement).getPropertyValue('--color-primary')` で実測値の文字列を取得してから渡す（`web/src/components/TrendChart.tsx` 参照）
 - 新規トークンが必要になったら、この表と Android 側のカラートークン表の両方に追記し、値を一致させる
 - 既存 Web 4画面のうち `ItemMasters` と経年グラフ画面は既にトークン化済みで直書きは0件。残る `RecordList` / `RecordDetail` / `RecordForm` の直書きカラーコードの是正は、本トークン基盤（Issue #56）を前提として画面別の後続 Issue #57〜#60 が担当する
-- 移行用エイリアス（`--text-h` / `--text` / `--bg` / `--border`）: `App.css` の既存参照が壊れないよう、新トークンの `var()` 別名として `index.css` に残置している。画面別の置き換えが完了した最後の Issue（#60）が撤去する
+- 移行用エイリアス（`--text-h` / `--text` / `--bg` / `--border`）: `App.css` の既存参照が壊れないよう、新トークンの `var()` 別名として `index.css` に一時的に残置していたが、Web カラートークン移行（Issue #56〜#60, #72）の完了に伴い、参照箇所（`App.css` / `index.css` 計25箇所）をすべて新トークン名へ置き換えたうえで Issue #72 にて撤去済み（`index.css` からエイリアス4定義を削除）。以後、旧トークン名（`--text-h` / `--text` / `--bg` / `--border`）は使用しない
 - **外部ブランド由来の色は例外として直書きを許容する**（2026-09-09 追記, Issue #58）: `.btn-google`（Google サインインボタン）の配色 `#fff` / `#3c4043` / `#dadce0` は Google ブランドガイドラインの指定色であり、プロダクトのブランドカラーではないため、トークンへ機械的に寄せない。直書きのまま残し、理由をコード側のコメントで明示する。`--color-surface` の `#FFFFFF` とはたまたま同じ値になるだけで意味が異なるため代用しない
 
 ## プロジェクト固有ルール
